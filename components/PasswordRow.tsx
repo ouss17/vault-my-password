@@ -1,11 +1,15 @@
+import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const PasswordRow = ({ id, name, username, onReveal }: { id: string; name: string; username?: string; onReveal: () => void }) => {
+  const t = useT();
   return (
     <Pressable
       onPress={onReveal}
+      accessibilityLabel={`${t("accessibility.revealPassword")}${name ? `: ${name}` : ""}`}
+      accessibilityRole="button"
       android_ripple={{ color: "rgba(255,255,255,0.02)" }}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -14,7 +18,7 @@ const PasswordRow = ({ id, name, username, onReveal }: { id: string; name: strin
           {name}
         </Text>
         <View style={styles.maskRow}>
-          <Text style={styles.mask}>••••••••</Text>
+          <Text style={styles.mask}>{t("password.hidden")}</Text>
           {username ? <Text style={styles.username}>  ·  {username}</Text> : null}
         </View>
       </View>

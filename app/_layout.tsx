@@ -7,12 +7,12 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // Ajout pour Redux
+import UnlockGate from '@/components/UnlockGate';
 import { persistor, store } from '@/redux/store';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 // new:
-import UnlockGate from '@/components/UnlockGate';
 
 export const unstable_settings = {
   anchor: '(tabs)',

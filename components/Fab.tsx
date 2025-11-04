@@ -13,7 +13,7 @@ const Fab = ({ onPress }: { onPress: () => void }) => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: { position: "absolute", right: 18, bottom: 24 },
+  wrapper: { position: "absolute", right: 18, bottom: 100 },
   fab: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#007aff", alignItems: "center", justifyContent: "center", elevation: 6 },
 });
 

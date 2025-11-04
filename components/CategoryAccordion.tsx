@@ -1,5 +1,6 @@
 import { addCategory, deleteCategoryAndPasswords } from "@/redux/slices/categoriesSlice";
 import { upsertPassword } from "@/redux/slices/pwdSlice";
+import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -32,6 +33,7 @@ const CategoryAccordion = ({
   onReveal: (id: string) => void;
 }) => {
   const dispatch = useDispatch();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false); // controls rendering of content for animated unmount
 
@@ -99,16 +101,21 @@ const CategoryAccordion = ({
 
   const onDeleteCategory = () => {
     if (categoryId === "uncategorized") {
-      Alert.alert("Suppression impossible", "La catégorie 'Sans catégorie' ne peut pas être supprimée.");
+      Alert.alert(t("alerts.deleteCategory.forbiddenTitle"), t("alerts.deleteCategory.forbiddenMessage"));
       return;
     }
+
+    const confirmTitle = t("alerts.deleteCategory.confirmTitle");
+    const confirmMsgTemplate = t("alerts.deleteCategory.confirmMessage"); // expects {name} and {count}
+    const confirmMsg = confirmMsgTemplate.replace("{name}", categoryName).replace("{count}", String(items.length));
+
     Alert.alert(
-      "Supprimer la catégorie",
-      `Supprimer la catégorie "${categoryName}" supprimera également ${items.length} mot(s) de passe. Confirmez ?`,
+      confirmTitle,
+      confirmMsg,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -117,12 +124,15 @@ const CategoryAccordion = ({
               const payload = res?.payload ?? { removedCategory: null, removedPasswords: [] };
 
               // show undo alert: user can restore removed data
+              const deletedTitle = t("alerts.deleteCategory.deletedTitle");
+              const deletedMsg = t("alerts.deleteCategory.deletedMessage").replace("{name}", categoryName);
+
               Alert.alert(
-                "Supprimé",
-                `La catégorie "${categoryName}" a été supprimée.`,
+                deletedTitle,
+                deletedMsg,
                 [
                   {
-                    text: "Annuler la suppression",
+                    text: t("alerts.deleteCategory.undo"),
                     onPress: () => {
                       // restore category and passwords (use addCategory / upsertPassword to keep original ids)
                       if (payload.removedCategory) {
@@ -133,17 +143,17 @@ const CategoryAccordion = ({
                       }
                     },
                   },
-                  { text: "OK", style: "default" },
+                  { text: t("common.ok"), style: "default" },
                 ],
                 { cancelable: true }
               );
             } catch (err) {
               console.error("Delete category error:", err);
-              Alert.alert("Erreur", "Impossible de supprimer la catégorie.");
+              Alert.alert(t("alert.error.title"), t("alerts.deleteCategory.errorMessage"));
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -159,7 +169,7 @@ const CategoryAccordion = ({
             {categoryName}
           </Text>
           <Text style={styles.count}>
-            {items.length} élément{items.length > 1 ? "s" : ""}
+            {items.length} {items.length > 1 ? t("category.count.plural") : t("category.count.singular")}
           </Text>
         </View>
 
@@ -168,7 +178,7 @@ const CategoryAccordion = ({
             onPress={onDeleteCategory}
             style={styles.iconBtn}
             android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
-            accessibilityLabel={`Supprimer la catégorie ${categoryName}`}
+            accessibilityLabel={`${t("accessibility.deleteCategory")} ${categoryName}`}
           >
             <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
           </Pressable>
