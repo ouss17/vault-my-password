@@ -41,7 +41,6 @@ export default function QuestionSettings() {
     };
     const sub = Keyboard.addListener("keyboardDidHide", onHide);
     return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionHint, plainAnswer, s.questionAnswer]);
 
   const handleHintSave = () => {

@@ -9,7 +9,7 @@ import React from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 
-// helper to safely extract a message from unknown errors (avoids TS complaining about `.message`)
+
 const errorMessage = (err: unknown) => {
   if (!err) return String(err);
   if (typeof err === "string") return err;
@@ -66,7 +66,7 @@ export default function ImportData() {
         return;
       }
 
-      // detect arrays
+      
       const tryFind = (obj: any) => {
         if (!obj || typeof obj !== "object") return { cats: [], pwds: [] };
         const cats = Array.isArray(obj.categories) ? obj.categories : Array.isArray(obj.categories?.items) ? obj.categories.items : [];
@@ -85,7 +85,7 @@ export default function ImportData() {
       }
 
       if (categoriesArray.length === 0 && passwordsArray.length === 0) {
-        // fallback: scan top-level arrays conservatively
+        
         for (const k of Object.keys(parsed)) {
           const v = parsed[k];
           if (Array.isArray(v) && v.length && typeof v[0] === "object") {
@@ -101,12 +101,12 @@ export default function ImportData() {
         return;
       }
 
-      // ids
+      
       const genId = () => `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
       const normalizeCats = categoriesArray.map((c: any) => ({ ...c, id: c.id ?? genId() }));
       const normalizePwds = passwordsArray.map((p: any) => ({ ...p, id: p.id ?? genId() }));
 
-      // existing sets
+      
       const existingCatIds = new Set(categories.map((c: any) => c.id));
       const existingPwdIds = new Set(passwords.map((p: any) => p.id));
 
@@ -147,7 +147,7 @@ export default function ImportData() {
         return;
       }
 
-      // apply
+      
       try {
         if (catsToAdd.length > 0) dispatch(setCategories([...categories, ...catsToAdd]));
         if (pwdsToAdd.length > 0) dispatch(setPasswords([...passwords, ...pwdsToAdd]));

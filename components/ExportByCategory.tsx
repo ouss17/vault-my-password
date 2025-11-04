@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
 
-// Controlled props allow the parent to keep the selected categories state.
+
 export default function ExportByCategory({
   selected: externalSelected,
   setSelected: externalSetSelected,
@@ -16,7 +16,7 @@ export default function ExportByCategory({
   showButton = true,
 }: {
   selected?: string[];
-  // accept both direct setter or updater function like useState setter
+  
   setSelected?: React.Dispatch<React.SetStateAction<string[]>>;
   showSelectors?: boolean;
   showButton?: boolean;
@@ -54,7 +54,7 @@ export default function ExportByCategory({
         mimeType: "application/json",
         dialogTitle: t("exportByCategory.dialogTitle"),
       });
-      // clear selection only for local mode
+      
       if (!externalSelected) setSelected([]);
     } catch (e: any) {
       const msgTemplate = t("alerts.export.error");
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   choice: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, marginBottom: 8, marginRight: 8, backgroundColor: "transparent" },
   choiceActive: { backgroundColor: "rgba(30,144,255,0.12)" },
   choiceText: { color: "#e6f7ff" },
-  // match ExportAll btn size/align
+  
   btn: { backgroundColor: "#1e90ff", paddingVertical: 12, minHeight: 44, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   btnText: { color: "#fff", fontWeight: "700" },
 });

@@ -7,7 +7,6 @@ export interface PasswordItem {
   name: string;
   website?: string;
   username?: string;
-  // contient la version chiffrée du mot de passe (AES)
   mdp: string;
   categoryId?: string;
   notes?: string;
@@ -28,7 +27,7 @@ const pwdSlice = createSlice({
   name: "passwords",
   initialState,
   reducers: {
-    // attend mdp déjà chiffré
+    
     addPassword(state, action: PayloadAction<Omit<Partial<PasswordItem>, "id" | "createdAt"> & { mdp: string; name?: string }>) {
       const now = Date.now();
       const payload = action.payload;
@@ -37,7 +36,7 @@ const pwdSlice = createSlice({
         name: payload.name ?? "",
         website: payload.website,
         username: payload.username,
-        mdp: payload.mdp, // chiffré
+        mdp: payload.mdp, 
         categoryId: payload.categoryId,
         notes: payload.notes,
         favorite: payload.favorite ?? false,
@@ -75,12 +74,12 @@ const pwdSlice = createSlice({
         state.items.push(incoming);
       }
     },
-    // remove all passwords that belong to a category id (categoryId may be null/undefined)
+    
     removePasswordsByCategory(state, action: PayloadAction<string | null>) {
       const cid = action.payload;
       state.items = state.items.filter((p) => (p.categoryId ?? null) !== cid);
     },
-    // optional: remove a single password by id
+    
     removePassword(state, action: PayloadAction<string>) {
       state.items = state.items.filter((p) => p.id !== action.payload);
     },
@@ -92,7 +91,7 @@ export const { addPassword, updatePassword, deletePassword, setPasswords, clearP
 
 export default pwdSlice.reducer;
 
-/* helpers de chiffrement/déchiffrement (AES) */
+
 export const encryptText = (plain: string, key: string) => {
   return CryptoJS.AES.encrypt(plain, key).toString();
 };
@@ -107,10 +106,6 @@ export const decryptText = (cipherText: string, key: string) => {
   }
 };
 
-/* thunks pratiques :
- - addPasswordEncrypted: chiffre le mdp avant d'appeler addPassword
- - updatePasswordEncrypted: chiffre si mdp fourni
- - revealPasswordById: déchiffre et retourne la valeur (ne la stocke pas) */
 export const addPasswordEncrypted =
   (payload: Omit<Partial<PasswordItem>, "id" | "createdAt"> & { mdp: string; name?: string }, encryptionKey: string) =>
   async (dispatch: AppDispatch) => {

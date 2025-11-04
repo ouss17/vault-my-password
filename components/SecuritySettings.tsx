@@ -25,7 +25,6 @@ export default function SecuritySettings() {
   const s = useSelector((st: RootState) => st.settings);
   const t = useT();
 
-  // local lock timeout field same UX as before
   const [lockTimeoutText, setLockTimeoutText] = useState<string>(String(s.lockTimeoutMinutes ?? 5));
   useEffect(() => {
     setLockTimeoutText(String(s.lockTimeoutMinutes ?? 5));
@@ -33,13 +32,12 @@ export default function SecuritySettings() {
 
   const toggleQuestionAuth = (v: boolean) => {
     if (!v) {
-      // If there is no hint and no saved answer, disable without confirmation.
+        
       if (!s.questionHint && !s.questionAnswer) {
         dispatch(setQuestionAuthEnabled(false));
         return;
       }
-
-      // Otherwise ask confirmation to remove stored sensitive data.
+      
       Alert.alert(
         t("settings.security.questionDisableTitle"),
         t("question.disable.confirm"),
@@ -58,7 +56,7 @@ export default function SecuritySettings() {
       return;
     }
 
-    // Enabling: keep any existing hint/answer by default; user can overwrite later.
+    
     dispatch(setQuestionAuthEnabled(true));
   };
 

@@ -28,8 +28,7 @@ const Settings = () => {
   const s = useSelector((st: RootState) => st.settings);
   const router = useRouter();
   const t = useT();
-
-  // shared selected categories for export (controlled mode)
+  
   const [exportSelectedIds, setExportSelectedIds] = useState<string[]>([]);
 
   const onSetLanguage = (lang: Language) => {
@@ -53,10 +52,9 @@ const Settings = () => {
             <Text style={styles.pageTitle}>{t("settings.pageTitle")}</Text>
           </View>
 
-          {/* Security section (delegated) */}
-          <SecuritySettings />
 
-          {/* Language */}
+          <SecuritySettings />
+          
           <Text style={styles.sectionTitle}>{t("settings.language")}</Text>
           <View style={styles.card}>
             <View style={styles.langRow}>
@@ -72,7 +70,7 @@ const Settings = () => {
             </View>
           </View>
 
-          {/* Export / Import */}
+
           <Text style={styles.sectionTitle}>{t("settings.importExport.title")}</Text>
           <View style={styles.card}>
             <Text style={styles.label}>{t("settings.importExport.title")}</Text>
@@ -84,16 +82,16 @@ const Settings = () => {
               </View>
               <View style={{ width: 8 }} />
               <View style={{ flex: 1 }}>
-                {/* export selected button (uses shared selected state below) */}
+                
                 <ExportByCategory selected={exportSelectedIds} setSelected={setExportSelectedIds} showSelectors={false} showButton={true} />
               </View>
             </View>
 
             <Text style={[styles.label, { marginTop: 12 }]}>{t("settings.importExport.selectCategory")}</Text>
-            {/* selectors (share the same selected state) */}
+            
             <ExportByCategory selected={exportSelectedIds} setSelected={setExportSelectedIds} showSelectors={true} showButton={false} />
 
-            {/* importer placé sous les catégories */}
+
             <View style={{ marginTop: 12 }}>
               <ImportData />
             </View>
