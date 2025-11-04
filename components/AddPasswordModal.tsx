@@ -32,7 +32,6 @@ const AddPasswordModal = ({
   const dispatch = useDispatch<AppDispatch>();
   const categories = useSelector((s: RootState) => s.categories.items);
 
-  // form state
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [website, setWebsite] = useState("");
@@ -40,7 +39,6 @@ const AddPasswordModal = ({
   const [notes, setNotes] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
 
-  // inline category add
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
 
@@ -51,12 +49,11 @@ const AddPasswordModal = ({
       setName(initialItem.name ?? "");
       setUsername(initialItem.username ?? "");
       setWebsite(initialItem.website ?? "");
-      // do NOT prefill password field for security; leave empty to keep existing password
       setMdp("");
       setNotes(initialItem.notes ?? "");
       setCategoryId(initialItem.categoryId ?? undefined);
     } else {
-      // reset on open/close
+      
       setName("");
       setUsername("");
       setWebsite("");
@@ -73,10 +70,9 @@ const AddPasswordModal = ({
       Alert.alert(t("alert.error.title"), t("validation.requiredFields"));
       return;
     }
-    const key = "MASTER_KEY_PLACEHOLDER"; // replace with secure retrieval
+    const key = "MASTER_KEY_PLACEHOLDER";
 
     if (isEdit && initialItem) {
-      // build changes; only include fields that should be updated
       const changes: any = {
         name: name.trim(),
         username: username.trim() || undefined,
@@ -84,7 +80,7 @@ const AddPasswordModal = ({
         notes: notes.trim() || undefined,
         categoryId,
       };
-      // include mdp only if user entered a new one
+      
       if (mdp) changes.mdp = mdp;
       await dispatch<any>(updatePasswordEncrypted(initialItem.id, changes, key));
     } else {
@@ -103,7 +99,7 @@ const AddPasswordModal = ({
       );
     }
 
-    // reset and close
+    
     setName("");
     setUsername("");
     setWebsite("");
@@ -143,14 +139,14 @@ const AddPasswordModal = ({
     setAddingCategory(false);
   };
 
-  // refs pour navigation entre champs
+  
   const nameRef = useRef<TextInput | null>(null);
   const usernameRef = useRef<TextInput | null>(null);
   const websiteRef = useRef<TextInput | null>(null);
   const mdpRef = useRef<TextInput | null>(null);
   const notesRef = useRef<TextInput | null>(null);
 
-  // helper: valide la valeur et focus sur la ref suivante si OK, sinon alerte et focus sur le champ courant
+  
   const validateAndFocus = (
     value: string | undefined | null,
     nextRef?: React.RefObject<TextInput | null>,
@@ -243,7 +239,7 @@ const AddPasswordModal = ({
                 returnKeyType="next"
                 blurOnSubmit={false}
                 onSubmitEditing={() => {
-                  // si en édition et mdp vide -> passer aux notes
+                  
                   const required = !isEdit;
                   const ok = validateAndFocus(mdp, notesRef, required, "Mot de passe");
                   if (!ok && mdpRef.current) mdpRef.current.focus();
@@ -264,7 +260,7 @@ const AddPasswordModal = ({
                 numberOfLines={3}
                 returnKeyType="done"
                 onSubmitEditing={() => {
-                  // soumettre depuis le clavier si l'utilisateur appuie sur "done"
+                  
                   submit();
                 }}
               />
@@ -288,7 +284,7 @@ const AddPasswordModal = ({
                 </TouchableOpacity>
               ))}
 
-              {/* bouton pour afficher le champ d'ajout */}
+
               {!addingCategory ? (
                 <TouchableOpacity onPress={() => setAddingCategory(true)} style={[styles.catChip, styles.addCatChip]}>
                   <Text style={[styles.catChipText, { color: colors.accent }]}>{t("category.add")}</Text>
@@ -296,7 +292,7 @@ const AddPasswordModal = ({
               ) : null}
             </View>
 
-            {/* champ pour ajouter une nouvelle catégorie inline */}
+
             {addingCategory && (
               <View style={styles.addCategoryRow}>
                 <TextInput
@@ -362,8 +358,7 @@ const styles = StyleSheet.create({
   addCatChip: { borderStyle: "dashed" },
   catChipActive: { backgroundColor: "rgba(30,144,255,0.12)", borderColor: "rgba(30,144,255,0.25)" },
   catChipText: { color: colors.textPrimary, fontWeight: "600" },
-
-  /* new category row */
+  
   addCategoryRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
   newCategoryInput: { flex: 1, marginRight: 8 },
   addCategoryBtn: { backgroundColor: colors.accent, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },

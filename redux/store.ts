@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
-import categoriesReducer from './slices/categoriesSlice'; // ajouté
+import categoriesReducer from './slices/categoriesSlice';
 import pwdReducer from './slices/pwdSlice';
 import settingsReducer from './slices/settingsSlice';
 /**
@@ -10,7 +10,7 @@ import settingsReducer from './slices/settingsSlice';
 const rootReducer = combineReducers({
   settings: settingsReducer,
   passwords: pwdReducer,
-  categories: categoriesReducer, // ajouté
+  categories: categoriesReducer, 
 });
 
 
@@ -20,7 +20,6 @@ const rootReducer = combineReducers({
 const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  // persister settings + passwords + categories (ajoutez 'app' si vous avez ajouté appSlice)
   whitelist: ['settings', 'passwords', 'categories'],
 };
 
@@ -38,7 +37,6 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // redux-persist ajoute des actions non-serialisables; ignorez-les
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
     }),
@@ -49,10 +47,5 @@ export const store = configureStore({
  */
 export const persistor = persistStore(store);
 
-/**
- * Types utilitaires pour l'application.
- * - RootState : type de l'état global Redux
- * - AppDispatch : type du dispatch Redux
- */
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

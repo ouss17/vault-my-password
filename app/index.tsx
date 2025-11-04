@@ -18,11 +18,10 @@ const Index = () => {
   const passwords = useSelector((s: RootState) => s.passwords.items);
 
   const [showAdd, setShowAdd] = useState(false);
-  const [editItem, setEditItem] = useState<PasswordItem | null>(null); // new: item to edit
+  const [editItem, setEditItem] = useState<PasswordItem | null>(null); 
   const [detailId, setDetailId] = useState<string | null>(null);
   const router = useRouter();
 
-  // group passwords by categoryId for quick lookup
   const grouped = useMemo(() => {
     const map = new Map<string, typeof passwords>();
     passwords.forEach((p : any) => {
@@ -33,7 +32,6 @@ const Index = () => {
     return map;
   }, [passwords]);
 
-  // Build data to render: categories + an "Uncategorized" if needed
   const data = useMemo(() => {
     const arr = categories.map((c : any) => ({
       id: c.id,
@@ -48,7 +46,6 @@ const Index = () => {
   }, [categories, grouped]);
 
   const handleEditFromDetail = (item: PasswordItem) => {
-    // open the AddPasswordModal in edit mode
     setDetailId(null);
     setEditItem(item);
     setShowAdd(true);
@@ -60,7 +57,6 @@ const Index = () => {
   };
 
   return (
-    // SafeAreaView from react-native-safe-area-context handles safe areas correctly
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Header onOpenSettings={() => router.push("/settings")} />
       <View style={styles.content}>
@@ -92,16 +88,15 @@ const Index = () => {
         visible={detailId != null}
         passwordId={detailId}
         onClose={() => setDetailId(null)}
-        onEdit={handleEditFromDetail} // pass edit handler
+        onEdit={handleEditFromDetail} 
       />
 
-      {/* navigation to /settings handled by header button */}
     </SafeAreaView>
   );
 };
 
 const colors = {
-  background: "#072033", // dark blue night
+  background: "#072033",
   card: "#0b3a50",
   surface: "#093a54",
   textPrimary: "#e6f7ff",

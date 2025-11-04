@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { PasswordItem } from "./pwdSlice";
 
-// simple types used for undo payload
 export type CategoryBackup = { id: string; name: string };
 
 type LastDeleted = {

@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logo: { width: 160, height: 50 }, // adjust size as needed
+  logo: { width: 160, height: 50 }, 
   icon: { position: "absolute", right: 16, padding: 8 },
 });
 

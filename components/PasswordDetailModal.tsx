@@ -42,7 +42,7 @@ const PasswordDetailModal = ({
       setDecrypted(null);
       return;
     }
-    const key = "MASTER_KEY_PLACEHOLDER"; // replace with secure retrieval
+    const key = "MASTER_KEY_PLACEHOLDER"; 
     (async () => {
       const res = await dispatch<any>(revealPasswordById(passwordId, key));
       setDecrypted(res ?? null);
@@ -74,13 +74,13 @@ const PasswordDetailModal = ({
   };
 
   const handleEdit = () => {
-    // prefer parent handler to open the global AddPasswordModal in edit mode
+    
     if (onEdit) {
       onEdit(item);
       onClose();
       return;
     }
-    // fallback: open inline editor modal
+    
     setShowEdit(true);
   };
 
@@ -133,7 +133,7 @@ const PasswordDetailModal = ({
         </View>
       </Modal>
 
-      {/* Fallback inline editor if parent didn't handle edit */}
+
       {showEdit && item && (
         <AddPasswordModal
           visible={showEdit}
