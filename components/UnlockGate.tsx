@@ -65,6 +65,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   // schedule a lock to happen after (lockTimeout) ms since lastActivityRef
   const scheduleLock = useCallback(() => {
     clearInactivity();
+    // if no protections are configured, never schedule a lock
+    if (!settingsRef.current.fingerprintAuthEnabled && !settingsRef.current.questionAuthEnabled) return;
     const last = lastActivityRef.current;
     if (last == null) {
       // no activity yet -> do not schedule locking based on absolute time
@@ -188,10 +190,11 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       if (settingsRef.current.fingerprintAuthEnabled || settingsRef.current.questionAuthEnabled) {
         await tryUnlock();
       } else {
+        // no protections -> never lock
         setLocked(false);
-        // no protections -> still consider user active now and schedule lock if needed
         lastActivityRef.current = Date.now();
-        scheduleLock();
+        // do NOT schedule lock when protections are disabled
+        clearInactivity();
       }
     })();
 
@@ -206,11 +209,12 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   // Do NOT trigger biometric when enabling: user was likely changing settings UI.
   useEffect(() => {
     if (!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled) {
+      // when protections are disabled, ensure we don't schedule any future lock
       clearInactivity();
       setShowQuestion(false);
       setLocked(false);
       lastActivityRef.current = Date.now();
-      scheduleLock();
+      // do NOT schedule lock when protections are disabled
     } else {
       // protections enabled: don't auto-prompt the user — wait for inactivity or manual unlock
       // but close question modal if fingerprint was enabled and question disabled
@@ -323,16 +327,22 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
 
       {/* lock overlay modal */}
       <Modal visible={locked && !showQuestion} animationType="fade" transparent>
-        <View style={styles.modalBackdrop}>
+        {/* attach pan handlers to the overlay so swipe works when modal is visible */}
+        <View style={styles.modalBackdrop} {...panResponder.panHandlers}>
           <View style={styles.modalCard}>
             <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
-            <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
+            {/* If there are no protections configured, show an explicit swipe hint */}
+            {!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled ? (
+              <Text style={styles.hint}>{t("unlock.swipeToUnlock")}</Text>
+            ) : (
+              <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
+            )}
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
               {/* Render a single primary action:
-                  - If fingerprint enabled => primary "Déverrouiller" triggers biometric (tryUnlock).
-                  - Else if only question enabled => primary "Réponse" opens the question modal.
-                  Avoid rendering the small duplicate "Réponse" button. */}
+                  - If fingerprint enabled => primary "Unlock" triggers biometric (tryUnlock).
+                  - Else if only question enabled => primary "Answer" opens the question modal.
+                  - When no protections are enabled there is no primary button (swipe to unlock). */}
               {settings.fingerprintAuthEnabled ? (
                 <Pressable
                   style={[styles.btn, isAuthenticating ? { opacity: 0.6 } : null]}
@@ -340,7 +350,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
                     if (isAuthenticatingRef.current) return;
                     const ok = await tryUnlock();
                     if (!ok) {
-                      /* tryUnlock affichera la question si nécessaire */
+                      /* tryUnlock will show question if necessary */
                     }
                   }}
                   disabled={isAuthenticating}

@@ -184,5 +184,11 @@
     "en": "What was the model of my first car?",
     "fr": "Quel est le modèle de ma première voiture ?",
     "es": "¿Cuál fue el modelo de mi primer coche?"
+  },
+
+  "unlock.swipeToUnlock": {
+    "en": "Swipe anywhere to unlock",
+    "fr": "Faites glisser n'importe où pour déverrouiller",
+    "es": "Desliza en cualquier lugar para desbloquear"
   }
 }
