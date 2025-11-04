@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 const colors = {
   card: "#0b3a50",
@@ -10,7 +10,12 @@ const colors = {
 const Header = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Vault My Password</Text>
+      <Image
+        source={require("../assets/images/vmp_logo_title_mini.png")}
+        style={styles.logo}
+        accessibilityLabel="Vault My Password"
+        resizeMode="contain"
+      />
       <TouchableOpacity onPress={onOpenSettings} style={styles.icon}>
         <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
       </TouchableOpacity>
@@ -26,7 +31,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontSize: 20, fontWeight: "600", color: colors.textPrimary },
+  logo: { width: 160, height: 50 }, // adjust size as needed
   icon: { position: "absolute", right: 16, padding: 8 },
 });
 

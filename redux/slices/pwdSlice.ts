@@ -75,10 +75,19 @@ const pwdSlice = createSlice({
         state.items.push(incoming);
       }
     },
+    // remove all passwords that belong to a category id (categoryId may be null/undefined)
+    removePasswordsByCategory(state, action: PayloadAction<string | null>) {
+      const cid = action.payload;
+      state.items = state.items.filter((p) => (p.categoryId ?? null) !== cid);
+    },
+    // optional: remove a single password by id
+    removePassword(state, action: PayloadAction<string>) {
+      state.items = state.items.filter((p) => p.id !== action.payload);
+    },
   },
 });
 
-export const { addPassword, updatePassword, deletePassword, setPasswords, clearPasswords, upsertPassword } =
+export const { addPassword, updatePassword, deletePassword, setPasswords, clearPasswords, upsertPassword, removePasswordsByCategory, removePassword } =
   pwdSlice.actions;
 
 export default pwdSlice.reducer;

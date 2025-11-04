@@ -1,8 +1,9 @@
 import type { RootState } from "@/redux/store";
+import { isLockSuspended } from "@/utils/lockSuspend";
 import * as Crypto from "expo-crypto";
 import * as LocalAuthentication from "expo-local-authentication";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, AppState, AppStateStatus, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSelector } from "react-redux";
 
 const styles = StyleSheet.create({
@@ -44,6 +45,9 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     settingsRef.current = settings;
   }, [settings]);
 
+  // last user activity timestamp — lock only after inactivity window from this timestamp
+  const lastActivityRef = useRef<number | null>(null);
+
   const clearInactivity = useCallback(() => {
     if (inactivityRef.current) {
       clearTimeout(inactivityRef.current);
@@ -51,11 +55,20 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  const startInactivity = useCallback(() => {
+  // schedule a lock to happen after (lockTimeout) ms since lastActivityRef
+  const scheduleLock = useCallback(() => {
     clearInactivity();
+    const last = lastActivityRef.current;
+    if (last == null) {
+      // no activity yet -> do not schedule locking based on absolute time
+      return;
+    }
+    const elapsed = Date.now() - last;
+    const remaining = Math.max(0, lockTimeout - elapsed);
     inactivityRef.current = setTimeout(() => {
-      if (mountedRef.current) setLocked(true);
-    }, lockTimeout) as unknown as number;
+      // respect suspend flag at lock-time
+      if (mountedRef.current && !isLockSuspended()) setLocked(true);
+    }, remaining) as unknown as number;
   }, [lockTimeout, clearInactivity]);
 
   const tryBiometric = useCallback(async () => {
@@ -74,33 +87,23 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // helper: convert hex -> bytes
-  const hexToBytes = (hex: string) => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
-
-  // helper: timing-safe compare of two byte arrays
-  const timingSafeEqual = (a: Uint8Array, b: Uint8Array) => {
-    if (a.length !== b.length) return false;
-    let diff = 0;
-    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-    return diff === 0;
-  };
-
   const verifyAnswer = useCallback(
     async (plain: string) => {
-      // stored hash (hex) from settings
       const stored = (settingsRef.current as any).questionAnswer ?? null;
       if (!stored) return false;
-
-      // normalize input same way as when saving (trim; optionally toLowerCase())
-      const normalized = plain.trim(); // or plain.trim().toLowerCase() if you saved lowercased
-
+      const normalized = plain.trim();
       const hashed = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, normalized);
+      // timing-safe compare
+      const hexToBytes = (hex: string) => new Uint8Array(hex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+      const timingSafeEqual = (a: Uint8Array, b: Uint8Array) => {
+        if (a.length !== b.length) return false;
+        let diff = 0;
+        for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+        return diff === 0;
+      };
       try {
-        const a = hexToBytes(hashed);
-        const b = hexToBytes(stored);
-        return timingSafeEqual(a, b);
+        return timingSafeEqual(hexToBytes(hashed), hexToBytes(stored));
       } catch {
-        // fallback to simple equality if parsing fails
         return hashed === stored;
       }
     },
@@ -114,7 +117,9 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       const ok = await tryBiometric();
       if (ok) {
         setLocked(false);
-        startInactivity();
+        // mark activity now and schedule lock after inactivity
+        lastActivityRef.current = Date.now();
+        scheduleLock();
         return true;
       }
       // if biometric fails and question enabled, show question
@@ -124,9 +129,10 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       return false;
     }
     setLocked(false);
-    startInactivity();
+    lastActivityRef.current = Date.now();
+    scheduleLock();
     return true;
-  }, [tryBiometric, startInactivity]);
+  }, [tryBiometric, scheduleLock]);
 
   // run unlock flow only once on mount (avoid triggering on every settings change)
   useEffect(() => {
@@ -136,7 +142,9 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
         await tryUnlock();
       } else {
         setLocked(false);
-        startInactivity();
+        // no protections -> still consider user active now and schedule lock if needed
+        lastActivityRef.current = Date.now();
+        scheduleLock();
       }
     })();
 
@@ -154,7 +162,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       clearInactivity();
       setShowQuestion(false);
       setLocked(false);
-      startInactivity();
+      lastActivityRef.current = Date.now();
+      scheduleLock();
     } else {
       // protections enabled: don't auto-prompt the user — wait for inactivity or manual unlock
       // but close question modal if fingerprint was enabled and question disabled
@@ -164,7 +173,9 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   }, [settings.fingerprintAuthEnabled, settings.questionAuthEnabled]);
 
   const onUserActivity = () => {
-    if (!locked) startInactivity();
+    // mark latest activity and (re)schedule lock only when unlocked
+    lastActivityRef.current = Date.now();
+    if (!locked) scheduleLock();
   };
 
   const handleSubmitAnswer = async () => {
@@ -177,7 +188,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       setAnswer("");
       setShowQuestion(false);
       setLocked(false);
-      startInactivity();
+      lastActivityRef.current = Date.now();
+      scheduleLock();
     } else {
       Alert.alert("Erreur", "Réponse incorrecte");
     }
@@ -187,10 +199,35 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     setShowQuestion(true);
   };
 
+  // AppState handling: when app goes to background lock immediately; when back to active, mark activity.
+  useEffect(() => {
+    const onAppStateChange = (next: AppStateStatus) => {
+      if (next === "background" || next === "inactive") {
+        // lock immediately when leaving app unless locking is suspended (picker/import flow)
+        if (!isLockSuspended() && (settingsRef.current.fingerprintAuthEnabled || settingsRef.current.questionAuthEnabled)) {
+          setLocked(true);
+        }
+        clearInactivity();
+      } else if (next === "active") {
+        lastActivityRef.current = Date.now();
+        if (!locked) scheduleLock();
+      }
+    };
+
+    // AppState.addEventListener returns a subscription with .remove() on modern RN versions.
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => {
+      // remove the subscription on unmount
+      subscription.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked, scheduleLock, clearInactivity]);
+
   return (
     <Pressable style={styles.blocker} onPressIn={onUserActivity}>
       {children}
 
+      {/* lock overlay modal */}
       <Modal visible={locked && !showQuestion} animationType="fade" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
@@ -198,25 +235,45 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
             <Text style={styles.hint}>Appuyez pour tenter de déverrouiller.</Text>
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-              <Pressable style={styles.smallBtn} onPress={forceShowQuestion}>
-                <Text style={styles.smallBtnText}>Réponse</Text>
-              </Pressable>
-              <Pressable
-                style={styles.btn}
-                onPress={async () => {
-                  const ok = await tryUnlock();
-                  if (!ok) {
-                    /* tryUnlock will show question if needed */
-                  }
-                }}
-              >
-                <Text style={styles.btnText}>Déverrouiller</Text>
-              </Pressable>
+              {/* bouton 'Réponse' uniquement si la question est activée */}
+              {settings.questionAuthEnabled && (
+                <Pressable style={styles.smallBtn} onPress={forceShowQuestion}>
+                  <Text style={styles.smallBtnText}>Réponse</Text>
+                </Pressable>
+              )}
+
+              {/* si l'empreinte est activée, proposer 'Déverrouiller' qui lance la biométrie */}
+              {settings.fingerprintAuthEnabled ? (
+                <Pressable
+                  style={styles.btn}
+                  onPress={async () => {
+                    const ok = await tryUnlock();
+                    if (!ok) {
+                      /* tryUnlock affichera la question si nécessaire */
+                    }
+                  }}
+                >
+                  <Text style={styles.btnText}>Déverrouiller</Text>
+                </Pressable>
+              ) : (
+                /* si pas d'empreinte mais question activée, proposer le bouton principal vers la question */
+                settings.questionAuthEnabled && (
+                  <Pressable
+                    style={styles.btn}
+                    onPress={() => {
+                      setShowQuestion(true);
+                    }}
+                  >
+                    <Text style={styles.btnText}>Réponse</Text>
+                  </Pressable>
+                )
+              )}
             </View>
           </View>
         </View>
       </Modal>
 
+      {/* question modal */}
       <Modal visible={showQuestion} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
@@ -224,6 +281,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
             <Text style={styles.hint}>
               {(settings.selectedQuestionId &&
                 (() => {
+                  // try to read question text from datasource if available in runtime
+                  // fallback: show hint stored
                   return (settings as any).questionHint ?? "Répondez à votre question secrète";
                 })()) ?? "Répondez à votre question secrète"}
             </Text>

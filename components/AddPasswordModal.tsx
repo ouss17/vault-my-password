@@ -1,8 +1,8 @@
+import { upsertCategory } from "@/redux/slices/categoriesSlice";
 import { nanoid } from "@reduxjs/toolkit";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { upsertCategory } from "../redux/slices/categoriesSlice";
 import type { PasswordItem } from "../redux/slices/pwdSlice";
 import { addPasswordEncrypted, updatePasswordEncrypted } from "../redux/slices/pwdSlice";
 import type { AppDispatch, RootState } from "../redux/store";

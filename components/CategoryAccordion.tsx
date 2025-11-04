@@ -1,13 +1,17 @@
+import { addCategory, deleteCategoryAndPasswords } from "@/redux/slices/categoriesSlice";
+import { upsertPassword } from "@/redux/slices/pwdSlice";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
+import { useDispatch } from "react-redux";
 import PasswordRow from "./PasswordRow";
 
 type PasswordItem = {
@@ -27,6 +31,7 @@ const CategoryAccordion = ({
   items: PasswordItem[];
   onReveal: (id: string) => void;
 }) => {
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false); // controls rendering of content for animated unmount
 
@@ -92,6 +97,56 @@ const CategoryAccordion = ({
     ],
   };
 
+  const onDeleteCategory = () => {
+    if (categoryId === "uncategorized") {
+      Alert.alert("Suppression impossible", "La catégorie 'Sans catégorie' ne peut pas être supprimée.");
+      return;
+    }
+    Alert.alert(
+      "Supprimer la catégorie",
+      `Supprimer la catégorie "${categoryName}" supprimera également ${items.length} mot(s) de passe. Confirmez ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // dispatch thunk that removes category and related passwords and returns the removed data
+              const res = await (dispatch as any)(deleteCategoryAndPasswords(categoryId));
+              const payload = res?.payload ?? { removedCategory: null, removedPasswords: [] };
+
+              // show undo alert: user can restore removed data
+              Alert.alert(
+                "Supprimé",
+                `La catégorie "${categoryName}" a été supprimée.`,
+                [
+                  {
+                    text: "Annuler la suppression",
+                    onPress: () => {
+                      // restore category and passwords (use addCategory / upsertPassword to keep original ids)
+                      if (payload.removedCategory) {
+                        dispatch(addCategory(payload.removedCategory));
+                      }
+                      if (Array.isArray(payload.removedPasswords)) {
+                        payload.removedPasswords.forEach((p: any) => dispatch(upsertPassword(p)));
+                      }
+                    },
+                  },
+                  { text: "OK", style: "default" },
+                ],
+                { cancelable: true }
+              );
+            } catch (err) {
+              console.error("Delete category error:", err);
+              Alert.alert("Erreur", "Impossible de supprimer la catégorie.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.wrapper}>
       <Pressable
@@ -108,9 +163,20 @@ const CategoryAccordion = ({
           </Text>
         </View>
 
-        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Ionicons name="chevron-down" size={20} color={styles.iconColor.color} />
-        </Animated.View>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={onDeleteCategory}
+            style={styles.iconBtn}
+            android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
+            accessibilityLabel={`Supprimer la catégorie ${categoryName}`}
+          >
+            <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+          </Pressable>
+
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <Ionicons name="chevron-down" size={20} color={styles.iconColor.color} />
+          </Animated.View>
+        </View>
       </Pressable>
 
       {mounted && (
@@ -149,6 +215,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   headerLeft: { maxWidth: "85%" },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  iconBtn: { padding: 6, borderRadius: 20 },
   title: { fontSize: 16, fontWeight: "700", color: "#e6f7ff" },
   count: { fontSize: 12, color: "#9ec5ea", marginTop: 4 },
   content: {
