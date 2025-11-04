@@ -1,3 +1,4 @@
+import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -29,6 +30,7 @@ const PasswordDetailModal = ({
   onEdit?: (item: PasswordItem) => void;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const t = useT();
   const [decrypted, setDecrypted] = useState<string | null>(null);
   const [showEdit, setShowEdit] = useState(false);
 
@@ -54,17 +56,21 @@ const PasswordDetailModal = ({
   const category = item.categoryId ? categories.find((c : { id: string; name: string; createdAt: number; updatedAt: number; }) => c.id === item.categoryId) : null;
 
   const handleDelete = () => {
-    Alert.alert("Supprimer", "Voulez-vous supprimer ce mot de passe ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          dispatch(deletePassword(item.id));
-          onClose();
+    Alert.alert(
+      t("alerts.deletePassword.confirmTitle"),
+      t("alerts.deletePassword.confirmMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            dispatch(deletePassword(item.id));
+            onClose();
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleEdit = () => {
@@ -84,42 +90,42 @@ const PasswordDetailModal = ({
         <View style={[styles.backdrop]}>
           <View style={styles.modal}>
             <View style={styles.header}>
-              <Text style={styles.title}>Détail</Text>
+              <Text style={styles.title}>{t("modal.passwordDetail.title")}</Text>
               <TouchableOpacity onPress={onClose}>
                 <Ionicons name="close" size={22} color={colors.title} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.body}>
-              <Text style={styles.label}>Titre</Text>
+              <Text style={styles.label}>{t("field.name")}</Text>
               <Text style={styles.value}>{item.name}</Text>
 
-              <Text style={styles.label}>Nom d'utilisateur</Text>
+              <Text style={styles.label}>{t("field.username")}</Text>
               <Text style={styles.value}>{item.username ?? "-"}</Text>
 
-              <Text style={styles.label}>Site</Text>
+              <Text style={styles.label}>{t("field.website")}</Text>
               <Text style={styles.value}>{item.website ?? "-"}</Text>
 
-              <Text style={styles.label}>Catégorie</Text>
-              <Text style={styles.value}>{category?.name ?? "Sans catégorie"}</Text>
+              <Text style={styles.label}>{t("field.category")}</Text>
+              <Text style={styles.value}>{category?.name ?? t("category.uncategorized")}</Text>
 
-              <Text style={styles.label}>Notes</Text>
+              <Text style={styles.label}>{t("field.notes")}</Text>
               <Text style={styles.value}>{item.notes ?? "-"}</Text>
 
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{t("field.password")}</Text>
               <View style={styles.passwordRow}>
-                <Text style={styles.passwordText}>{decrypted != null ? decrypted : "••••••••"}</Text>
+                <Text style={styles.passwordText}>{decrypted != null ? decrypted : t("password.hidden")}</Text>
               </View>
 
               <View style={styles.rowActions}>
                 <TouchableOpacity onPress={handleEdit} style={[styles.actionBtn, styles.editBtn]}>
                   <Ionicons name="create-outline" size={18} color="#fff" />
-                  <Text style={styles.actionText}>Modifier</Text>
+                  <Text style={styles.actionText}>{t("actions.edit")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleDelete} style={[styles.actionBtn, styles.deleteBtn]}>
                   <Ionicons name="trash-outline" size={18} color="#fff" />
-                  <Text style={styles.actionText}>Supprimer</Text>
+                  <Text style={styles.actionText}>{t("common.delete")}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

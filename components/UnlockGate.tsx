@@ -1,9 +1,10 @@
 import type { RootState } from "@/redux/store";
 import { isLockSuspended } from "@/utils/lockSuspend";
+import { useT } from "@/utils/useText";
 import * as Crypto from "expo-crypto";
 import * as LocalAuthentication from "expo-local-authentication";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, AppStateStatus, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, AppState, AppStateStatus, Modal, PanResponder, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSelector } from "react-redux";
 
 const styles = StyleSheet.create({
@@ -31,6 +32,7 @@ const styles = StyleSheet.create({
 
 export default function UnlockGate({ children }: { children: React.ReactNode }) {
   const settings = useSelector((s: RootState) => s.settings);
+  const t = useT();
 
   const lockTimeout = Math.max(1, settings.lockTimeoutMinutes ?? 5) * 60 * 1000; // ms
   const [locked, setLocked] = useState<boolean>(settings.questionAuthEnabled || settings.fingerprintAuthEnabled);
@@ -77,6 +79,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   }, [lockTimeout, clearInactivity]);
 
   const tryBiometric = useCallback(async () => {
+    // `t` is used in this callback
     const MIN_ACCEPT_MS = 600; // require the auth flow to take at least this long (avoid spurious fast resolves)
     const start = Date.now();
     try {
@@ -89,8 +92,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
 
       // require biometric only (no device PIN fallback) to avoid accidental acceptance via system credential dialogs
       const res = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Se déverrouiller",
-        fallbackLabel: "Utiliser la question",
+        promptMessage: t("unlock.biometricPrompt"),
+        fallbackLabel: t("unlock.button.answer"),
         // important: prefer biometric-only; some platforms ignore this but it's safer
         disableDeviceFallback: true,
       });
@@ -113,7 +116,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       isAuthenticatingRef.current = false;
       setIsAuthenticating(false);
     }
-  }, []);
+  }, [t]);
 
   const verifyAnswer = useCallback(
     async (plain: string) => {
@@ -226,10 +229,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answer) {
-      Alert.alert("Erreur", "La réponse est vide");
-      return;
-    }
+    // allow empty answer (user may have saved an empty answer)
     const ok = await verifyAnswer(answer.trim());
     if (ok) {
       setAnswer("");
@@ -238,13 +238,39 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       lastActivityRef.current = Date.now();
       scheduleLock();
     } else {
-      Alert.alert("Erreur", "Réponse incorrecte");
+      Alert.alert(t("alert.error.title"), t("unlock.error.incorrectAnswer"));
     }
   };
 
   const forceShowQuestion = () => {
     setShowQuestion(true);
   };
+
+  // PanResponder: allow swipe up or horizontal swipe to unlock when locked AND no protections enabled
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => {
+        // only capture when locked and there are no protections enabled
+        if (!locked) return false;
+        const currentSettings = settingsRef.current;
+        if (currentSettings.fingerprintAuthEnabled || currentSettings.questionAuthEnabled) return false;
+        // require a meaningful move
+        return Math.abs(gs.dy) > 20 || Math.abs(gs.dx) > 20;
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (!locked) return;
+        const currentSettings = settingsRef.current;
+        if (currentSettings.fingerprintAuthEnabled || currentSettings.questionAuthEnabled) return;
+        // swipe up (dy negative) or a horizontal swipe (abs dx) unlocks
+        if (gs.dy < -30 || Math.abs(gs.dx) > 40) {
+          setLocked(false);
+          lastActivityRef.current = Date.now();
+          scheduleLock();
+        }
+      },
+    })
+  ).current;
 
   // AppState handling: when app goes to background lock immediately; when back to active, mark activity.
   useEffect(() => {
@@ -279,8 +305,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   }, [locked, scheduleLock, clearInactivity]);
 
   return (
-    // block outer interactions with a Pressable; while authenticating we still render a blocking modal (below)
-    <Pressable style={styles.blocker} onPressIn={onUserActivity}>
+    // block outer interactions with a Pressable; attach pan handlers to detect swipe unlock when appropriate
+    <Pressable {...panResponder.panHandlers} style={styles.blocker} onPressIn={onUserActivity}>
       {children}
 
       {/* Blocking modal shown while waiting for biometric prompt to resolve.
@@ -289,8 +315,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { alignItems: "center", paddingVertical: 20 }]}>
             <ActivityIndicator size="large" color="#1e90ff" style={{ marginBottom: 12 }} />
-            <Text style={styles.title}>Authentification en cours</Text>
-            <Text style={styles.hint}>Veuillez suivre la demande biométrique du système.</Text>
+            <Text style={styles.title}>{t("unlock.authenticating")}</Text>
+            <Text style={styles.hint}>{t("unlock.authenticatingHint")}</Text>
           </View>
         </View>
       </Modal>
@@ -299,8 +325,8 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       <Modal visible={locked && !showQuestion} animationType="fade" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.title}>Application verrouillée</Text>
-            <Text style={styles.hint}>Appuyez pour tenter de déverrouiller.</Text>
+            <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
+            <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
               {/* Render a single primary action:
@@ -319,7 +345,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
                   }}
                   disabled={isAuthenticating}
                 >
-                  <Text style={styles.btnText}>Déverrouiller</Text>
+                  <Text style={styles.btnText}>{t("unlock.button.unlock")}</Text>
                 </Pressable>
               ) : settings.questionAuthEnabled ? (
                 <Pressable
@@ -330,7 +356,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
                   }}
                   disabled={isAuthenticating}
                 >
-                  <Text style={styles.btnText}>Réponse</Text>
+                  <Text style={styles.btnText}>{t("unlock.button.answer")}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -342,20 +368,20 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       <Modal visible={showQuestion} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.title}>Question de sécurité</Text>
+            <Text style={styles.title}>{t("unlock.question.title")}</Text>
             <Text style={styles.hint}>
               {(settings.selectedQuestionId &&
                 (() => {
                   // try to read question text from datasource if available in runtime
                   // fallback: show hint stored
-                  return (settings as any).questionHint ?? "Répondez à votre question secrète";
-                })()) ?? "Répondez à votre question secrète"}
+                  return (settings as any).questionHint ?? t("unlock.question.hintFallback");
+                })()) ?? t("unlock.question.hintFallback")}
             </Text>
 
             <TextInput
               value={answer}
               onChangeText={setAnswer}
-              placeholder="Réponse"
+              placeholder={t("unlock.answer.placeholder")}
               placeholderTextColor="#9ec5ea"
               style={styles.input}
               secureTextEntry
@@ -371,10 +397,10 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
                   setShowQuestion(false);
                 }}
               >
-                <Text style={styles.smallBtnText}>Annuler</Text>
+                <Text style={styles.smallBtnText}>{t("common.cancel")}</Text>
               </Pressable>
               <Pressable style={styles.btn} onPress={handleSubmitAnswer}>
-                <Text style={styles.btnText}>Valider</Text>
+                <Text style={styles.btnText}>{t("actions.validate")}</Text>
               </Pressable>
             </View>
           </View>

@@ -1,6 +1,7 @@
 import type { Category } from "@/redux/slices/categoriesSlice";
 import type { PasswordItem } from "@/redux/slices/pwdSlice";
 import type { RootState } from "@/redux/store";
+import { useT } from "@/utils/useText";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useState } from "react";
@@ -23,6 +24,7 @@ export default function ExportByCategory({
   const categories = useSelector((st: RootState) => st.categories.items) as Category[];
   const passwords = useSelector((st: RootState) => st.passwords.items) as PasswordItem[];
   const settings = useSelector((st: RootState) => st.settings);
+  const t = useT();
 
   const [localSelected, setLocalSelected] = useState<string[]>([]);
   const selected = externalSelected ?? localSelected;
@@ -35,12 +37,12 @@ export default function ExportByCategory({
 
   const handleExportSelected = async () => {
     if (selected.length === 0) {
-      Alert.alert("Aucune catégorie sélectionnée", "Sélectionnez au moins une catégorie à exporter.");
+      Alert.alert(t("alerts.export.selectedNoneTitle"), t("alerts.export.selectedNoneMessage"));
       return;
     }
     try {
       const selectedCats = selected.map((k) =>
-        k === "__uncategorized" ? { id: null, name: "Sans catégorie" } : categories.find((c) => c.id === k)
+        k === "__uncategorized" ? { id: null, name: t("category.uncategorized") } : categories.find((c) => c.id === k)
       );
       const items = passwords.filter((p) => selected.includes((p.categoryId ?? "__uncategorized") as string));
       const payload = { exportedAt: new Date().toISOString(), categories: selectedCats, passwords: items, settings };
@@ -50,12 +52,14 @@ export default function ExportByCategory({
       await FileSystem.writeAsStringAsync(fileUri, json, { encoding: "utf8" } as any);
       await Sharing.shareAsync(fileUri, {
         mimeType: "application/json",
-        dialogTitle: "Exporter catégories sélectionnées",
+        dialogTitle: t("exportByCategory.dialogTitle"),
       });
       // clear selection only for local mode
       if (!externalSelected) setSelected([]);
     } catch (e: any) {
-      Alert.alert("Erreur", "L'export a échoué : " + (e?.message ?? String(e)));
+      const msgTemplate = t("alerts.export.error");
+      const msg = msgTemplate.replace("{error}", e?.message ?? String(e));
+      Alert.alert(t("alert.error.title"), msg);
     }
   };
 
@@ -67,7 +71,7 @@ export default function ExportByCategory({
             onPress={() => toggle(null)}
             style={[styles.choice, selected.includes("__uncategorized") && styles.choiceActive]}
           >
-            <Text style={styles.choiceText}>Sans catégorie</Text>
+            <Text style={styles.choiceText}>{t("category.uncategorized")}</Text>
           </TouchableOpacity>
           {categories.map((c) => {
             const key = c.id ?? "__uncategorized";
@@ -86,7 +90,7 @@ export default function ExportByCategory({
 
       {showButton && (
         <TouchableOpacity style={styles.btn} onPress={handleExportSelected}>
-          <Text style={styles.btnText}>Exporter sélection</Text>
+          <Text style={styles.btnText}>{t("exportByCategory.button")}</Text>
         </TouchableOpacity>
       )}
     </View>

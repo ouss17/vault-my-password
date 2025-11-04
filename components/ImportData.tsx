@@ -2,6 +2,7 @@ import { setCategories } from "@/redux/slices/categoriesSlice";
 import { setPasswords } from "@/redux/slices/pwdSlice";
 import type { AppDispatch, RootState } from "@/redux/store";
 import { setLockSuspended } from "@/utils/lockSuspend";
+import { useT } from "@/utils/useText";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import React from "react";
@@ -24,6 +25,7 @@ export default function ImportData() {
   const dispatch = useDispatch<AppDispatch>();
   const categories = useSelector((st: RootState) => st.categories.items);
   const passwords = useSelector((st: RootState) => st.passwords.items);
+  const t = useT();
 
   const handleImport = async () => {
     setLockSuspended(true);
@@ -44,13 +46,13 @@ export default function ImportData() {
         r.type === "canceled" ||
         r.canceled === true;
       if (cancelled) {
-        Alert.alert("Import", "Aucun fichier sélectionné.");
+        Alert.alert(t("import.button"), t("alerts.import.noFileSelected"));
         return;
       }
 
       const uri: string | undefined = r.uri ?? r.fileCopyUri ?? r.assets?.[0]?.uri ?? r.assets?.[0]?.fileCopyUri;
       if (!uri) {
-        Alert.alert("Erreur", "Impossible de récupérer le fichier sélectionné.");
+        Alert.alert(t("alert.error.title"), t("alerts.import.cannotRetrieveFile"));
         return;
       }
 
@@ -60,7 +62,7 @@ export default function ImportData() {
         parsed = JSON.parse(content);
       } catch (err) {
         console.error("Import parse error:", err);
-        Alert.alert("Erreur", "Le fichier n'est pas un JSON valide.");
+        Alert.alert(t("alert.error.title"), t("alerts.import.invalidJson"));
         return;
       }
 
@@ -76,8 +78,8 @@ export default function ImportData() {
       let passwordsArray: any[] = [];
 
       const tries = [parsed, parsed.payload, parsed.exported, parsed.data, parsed.dump].filter(Boolean);
-      for (const t of tries) {
-        const { cats, pwds } = tryFind(t);
+      for (const ttry of tries) {
+        const { cats, pwds } = tryFind(ttry);
         if (cats.length) categoriesArray.push(...cats);
         if (pwds.length) passwordsArray.push(...pwds);
       }
@@ -95,7 +97,7 @@ export default function ImportData() {
       }
 
       if (categoriesArray.length === 0 && passwordsArray.length === 0) {
-        Alert.alert("Erreur", "Le fichier ne contient pas de catégories ni de mots de passe.");
+        Alert.alert(t("alert.error.title"), t("alerts.import.noData"));
         return;
       }
 
@@ -141,7 +143,7 @@ export default function ImportData() {
       });
 
       if (catsToAdd.length === 0 && pwdsToAdd.length === 0) {
-        Alert.alert("Import terminé", "Aucune donnée importée : tout existe déjà.");
+        Alert.alert(t("import.button"), t("alerts.import.nothingToImport"));
         return;
       }
 
@@ -149,14 +151,19 @@ export default function ImportData() {
       try {
         if (catsToAdd.length > 0) dispatch(setCategories([...categories, ...catsToAdd]));
         if (pwdsToAdd.length > 0) dispatch(setPasswords([...passwords, ...pwdsToAdd]));
-        Alert.alert("Import réussi", `Importé : ${catsToAdd.length} catégorie(s), ${pwdsToAdd.length} mot(s) de passe.`);
+        const successMsg = t("alerts.import.successDetails")
+          .replace("{cats}", String(catsToAdd.length))
+          .replace("{pwds}", String(pwdsToAdd.length));
+        Alert.alert(t("alerts.import.success"), successMsg);
       } catch (applyErr: any) {
         console.error("Import apply error:", applyErr);
-        Alert.alert("Erreur", "Un problème est survenu pendant l'import : " + errorMessage(applyErr));
+        const msg = t("alerts.import.applyError").replace("{error}", errorMessage(applyErr));
+        Alert.alert(t("alert.error.title"), msg);
       }
     } catch (e: any) {
       console.error("Import error:", e);
-      Alert.alert("Erreur", "Le fichier n'est pas un JSON valide ou une erreur est survenue : " + errorMessage(e));
+      const msg = t("alerts.import.finalError").replace("{error}", errorMessage(e));
+      Alert.alert(t("alert.error.title"), msg);
     } finally {
       setLockSuspended(false);
     }
@@ -164,7 +171,7 @@ export default function ImportData() {
 
   return (
     <TouchableOpacity style={styles.btn} onPress={handleImport}>
-      <Text style={styles.btnText}>Importer JSON</Text>
+      <Text style={styles.btnText}>{t("import.button")}</Text>
     </TouchableOpacity>
   );
 }

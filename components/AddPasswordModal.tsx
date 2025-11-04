@@ -1,4 +1,5 @@
 import { upsertCategory } from "@/redux/slices/categoriesSlice";
+import { useT } from "@/utils/useText";
 import { nanoid } from "@reduxjs/toolkit";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -27,6 +28,7 @@ const AddPasswordModal = ({
   onClose: () => void;
   initialItem?: PasswordItem | null;
 }) => {
+  const t = useT();
   const dispatch = useDispatch<AppDispatch>();
   const categories = useSelector((s: RootState) => s.categories.items);
 
@@ -68,7 +70,7 @@ const AddPasswordModal = ({
 
   const submit = async () => {
     if (!name.trim() || (!mdp && !isEdit)) {
-      Alert.alert("Erreur", "Les champs marqués d'un * sont requis.");
+      Alert.alert(t("alert.error.title"), t("validation.requiredFields"));
       return;
     }
     const key = "MASTER_KEY_PLACEHOLDER"; // replace with secure retrieval
@@ -116,7 +118,7 @@ const AddPasswordModal = ({
   const handleAddCategory = () => {
     const nm = newCategoryName.trim();
     if (!nm) {
-      Alert.alert("Erreur", "Le nom de la catégorie est requis.");
+      Alert.alert(t("alert.error.title"), t("validation.categoryNameRequired"));
       return;
     }
     const exists = categories.find((c : { id: string; name: string; createdAt: number; updatedAt: number; }) => c.name.toLowerCase() === nm.toLowerCase());
@@ -153,11 +155,11 @@ const AddPasswordModal = ({
     value: string | undefined | null,
     nextRef?: React.RefObject<TextInput | null>,
     required = false,
-    fieldName = "Ce champ"
+    fieldName = t("validation.field")
   ) => {
     const v = (value ?? "").toString().trim();
     if (required && !v) {
-      Alert.alert("Erreur", `${fieldName} est requis.`);
+      Alert.alert(t("alert.error.title"), `${fieldName} ${t("validation.isRequired")}`);
       return false;
     }
     if (nextRef?.current) {
@@ -170,17 +172,17 @@ const AddPasswordModal = ({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
         <View style={styles.modal}>
-          <Text style={styles.title}>{isEdit ? "Modifier le mot de passe" : "Ajouter un mot de passe"}</Text>
+          <Text style={styles.title}>{isEdit ? t("modal.editPassword.title") : t("modal.addPassword.title")}</Text>
 
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.field}>
               <Text style={styles.label}>
-                Nom
+                {t("field.name")}
                 <Text style={styles.required}> *</Text>
               </Text>
               <TextInput
                 ref={nameRef}
-                placeholder="Ex : Gmail"
+                placeholder={t("placeholder.exampleName")}
                 value={name}
                 onChangeText={setName}
                 style={styles.input}
@@ -188,15 +190,15 @@ const AddPasswordModal = ({
                 autoCapitalize="words"
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => validateAndFocus(name, usernameRef, true, "Nom")}
+                onSubmitEditing={() => validateAndFocus(name, usernameRef, true, t("field.name"))}
               />
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Nom d'utilisateur</Text>
+              <Text style={styles.label}>{t("field.username")}</Text>
               <TextInput
                 ref={usernameRef}
-                placeholder="Ex : jean.dupont"
+                placeholder={t("placeholder.exampleUsername")}
                 value={username}
                 onChangeText={setUsername}
                 style={styles.input}
@@ -204,15 +206,15 @@ const AddPasswordModal = ({
                 autoCapitalize="none"
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => validateAndFocus(username, websiteRef, false, "Nom d'utilisateur")}
+                onSubmitEditing={() => validateAndFocus(username, websiteRef, false, t("field.username"))}
               />
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Site</Text>
+              <Text style={styles.label}>{t("field.website")}</Text>
               <TextInput
                 ref={websiteRef}
-                placeholder="https://..."
+                placeholder={t("placeholder.website")}
                 value={website}
                 onChangeText={setWebsite}
                 style={styles.input}
@@ -220,18 +222,18 @@ const AddPasswordModal = ({
                 autoCapitalize="none"
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => validateAndFocus(website, mdpRef, false, "Site")}
+                onSubmitEditing={() => validateAndFocus(website, mdpRef, false, t("field.website"))}
               />
             </View>
 
             <View style={styles.field}>
               <Text style={styles.label}>
-                Mot de passe
+                {t("field.password")}
                 <Text style={styles.required}> {isEdit ? "" : "*"}</Text>
               </Text>
               <TextInput
                 ref={mdpRef}
-                placeholder={isEdit ? "Laisser vide pour garder le mot de passe actuel" : "Votre mot de passe"}
+                placeholder={isEdit ? t("field.password.keep") : t("field.password.placeholder")}
                 value={mdp}
                 onChangeText={setMdp}
                 style={styles.input}
@@ -250,10 +252,10 @@ const AddPasswordModal = ({
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Notes</Text>
+              <Text style={styles.label}>{t("field.notes")}</Text>
               <TextInput
                 ref={notesRef}
-                placeholder="Optionnel"
+                placeholder={t("field.notes.placeholder")}
                 value={notes}
                 onChangeText={setNotes}
                 style={[styles.input, styles.textarea]}
@@ -274,7 +276,7 @@ const AddPasswordModal = ({
                 onPress={() => setCategoryId(undefined)}
                 style={[styles.catChip, categoryId === undefined && styles.catChipActive]}
               >
-                <Text style={styles.catChipText}>Sans catégorie</Text>
+                <Text style={styles.catChipText}>{t("category.uncategorized")}</Text>
               </TouchableOpacity>
               {categories.map((c : { id: string; name: string; createdAt: number; updatedAt: number; }) => (
                 <TouchableOpacity
@@ -289,7 +291,7 @@ const AddPasswordModal = ({
               {/* bouton pour afficher le champ d'ajout */}
               {!addingCategory ? (
                 <TouchableOpacity onPress={() => setAddingCategory(true)} style={[styles.catChip, styles.addCatChip]}>
-                  <Text style={[styles.catChipText, { color: colors.accent }]}>+ Ajouter</Text>
+                  <Text style={[styles.catChipText, { color: colors.accent }]}>{t("category.add")}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -298,27 +300,27 @@ const AddPasswordModal = ({
             {addingCategory && (
               <View style={styles.addCategoryRow}>
                 <TextInput
-                  placeholder="Nouvelle catégorie"
+                  placeholder={t("category.new.placeholder")}
                   value={newCategoryName}
                   onChangeText={setNewCategoryName}
                   style={[styles.input, styles.newCategoryInput]}
                   placeholderTextColor={colors.textSecondary}
                 />
                 <TouchableOpacity onPress={handleAddCategory} style={styles.addCategoryBtn}>
-                  <Text style={styles.addCategoryBtnText}>Ajouter</Text>
+                  <Text style={styles.addCategoryBtnText}>{t("category.addButton")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => { setAddingCategory(false); setNewCategoryName(""); }} style={styles.addCategoryCancel}>
-                  <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                  <Text style={{ color: colors.textSecondary }}>{t("common.cancel")}</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             <View style={styles.actions}>
               <TouchableOpacity onPress={onClose} style={styles.btn}>
-                <Text style={styles.btnText}>Annuler</Text>
+                <Text style={styles.btnText}>{t("actions.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={submit} style={[styles.btn, styles.btnPrimary]}>
-                <Text style={{ color: "white", fontWeight: "600" }}>{isEdit ? "Enregistrer" : "Ajouter"}</Text>
+                <Text style={{ color: "white", fontWeight: "600" }}>{isEdit ? t("actions.save") : t("actions.add")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

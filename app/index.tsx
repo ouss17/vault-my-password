@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import PasswordDetailModal from "@/components/PasswordDetailModal";
 import type { PasswordItem } from "@/redux/slices/pwdSlice";
 import { RootState } from "@/redux/store";
+import { useT } from "@/utils/useText";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
@@ -12,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 const Index = () => {
+  const t = useT();
   const categories = useSelector((s: RootState) => s.categories.items);
   const passwords = useSelector((s: RootState) => s.passwords.items);
 
@@ -64,7 +66,7 @@ const Index = () => {
       <View style={styles.content}>
         {data.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>Aucun mot de passe pour le moment</Text>
+            <Text style={styles.emptyText}>{t("home.empty")}</Text>
           </View>
         ) : (
           <FlatList
@@ -73,7 +75,7 @@ const Index = () => {
             renderItem={({ item }) => (
               <CategoryAccordion
                 categoryId={item.id}
-                categoryName={item.name}
+                categoryName={item.name === "uncategorized" ? t("settings.importExport.uncategorized") : item.name}
                 items={item.items}
                 onReveal={(id) => setDetailId(id)}
               />
