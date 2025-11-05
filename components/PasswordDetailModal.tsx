@@ -89,7 +89,6 @@ const PasswordDetailModal = ({
    const handleCopyPassword = async () => {
      try {
        let toCopy = decrypted;
-       // try to reveal if not already available
        if (!toCopy && passwordId) {
          const res = await dispatch<any>(revealPasswordById(passwordId, "MASTER_KEY_PLACEHOLDER"));
          toCopy = res ?? null;
