@@ -19,6 +19,7 @@ type PasswordItem = {
   id: string;
   name: string;
   username?: string; 
+  isOld?: boolean;
 };
 
 const CategoryAccordion = ({
@@ -193,6 +194,7 @@ const CategoryAccordion = ({
               id={it.id}
               name={it.name}
               username={it.username}
+              isOld={it.isOld}
               onReveal={() => onReveal(it.id)}
             />
           ))}

@@ -30,6 +30,16 @@
   "settings.security.fingerprint": { "en": "Fingerprint / Face ID", "fr": "Empreinte / Face ID", "es": "Huella / Face ID" },
   "settings.security.fingerprintDesc": { "en": "Use biometric authentication if available", "fr": "Utiliser la biométrie si disponible", "es": "Usar autenticación biométrica si está disponible" },
   "settings.security.lockTimeout": { "en": "Lock after (minutes)", "fr": "Verrouiller après (minutes)", "es": "Bloquear después (minutos)" },
+  "settings.security.oldPassword.title": { "en": "Old password marker", "fr": "Marqueur vieux mot de passe", "es": "Marcador de contraseña antigua" },
+  "settings.security.oldPassword.desc": {
+    "en": "Mark passwords that are older than the configured threshold.",
+    "fr": "Marquer les mots de passe plus anciens que le seuil configuré.",
+    "es": "Marcar contraseñas más antiguas que el umbral configurado."
+  },
+  "settings.security.oldPassword.placeholder": { "en": "Threshold", "fr": "Seuil", "es": "Umbral" },
+  "settings.security.oldPassword.unit.days": { "en": "Days", "fr": "Jours", "es": "Días" },
+  "settings.security.oldPassword.unit.months": { "en": "Months", "fr": "Mois", "es": "Meses" },
+  "settings.security.oldPassword.unit.years": { "en": "Years", "fr": "Années", "es": "Años" },
 
   "question.label": { "en": "Question", "fr": "Question", "es": "Pregunta" },
   "question.selectPlaceholder": { "en": "Choose a question", "fr": "Choisir une question", "es": "Elegir una pregunta" },
@@ -54,6 +64,8 @@
   "field.notes": { "en": "Notes", "fr": "Notes", "es": "Notas" },
   "field.notes.placeholder": { "en": "Optional", "fr": "Optionnel", "es": "Opcional" },
   "field.category": { "en": "Category", "fr": "Catégorie", "es": "Categoría" },
+  "field.createdAt": { "en": "Created", "fr": "Créé le", "es": "Creado el" },
+  "field.updatedAt": { "en": "Updated", "fr": "Modifié le", "es": "Modificado el" },
 
   "placeholder.exampleName": { "en": "Ex: Gmail", "fr": "Ex : Gmail", "es": "Ej: Gmail" },
   "placeholder.exampleUsername": { "en": "Ex: john.doe", "fr": "Ex : jean.dupont", "es": "Ej: juan.perez" },
@@ -192,5 +204,45 @@
     "es": "Desliza en cualquier lugar para desbloquear"
   },
 
-  "search.placeholder": { "en": "Search categories or passwords", "fr": "Rechercher catégories ou mots de passe", "es": "Buscar categorías o contraseñas" }
+  "search.placeholder": { "en": "Search categories or passwords", "fr": "Rechercher catégories ou mots de passe", "es": "Buscar categorías o contraseñas" },
+
+  "password.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
+  "password.copy.message": { "en": "Password copied to clipboard", "fr": "Mot de passe copié dans le presse-papiers", "es": "Contraseña copiada al portapapeles" },
+  "password.copy.error": { "en": "Unable to copy password", "fr": "Impossible de copier le mot de passe", "es": "No se pudo copiar la contraseña" },
+  "password.copy.hidden": { "en": "Password is hidden", "fr": "Le mot de passe est masqué", "es": "La contraseña está oculta" },
+  "accessibility.copyPassword": { "en": "Copy password", "fr": "Copier le mot de passe", "es": "Copiar la contraseña" },
+  "username.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
+  "username.copy.message": { "en": "Username copied to clipboard", "fr": "Nom d'utilisateur copié dans le presse-papiers", "es": "Nombre de usuario copiado al portapapeles" },
+  "username.copy.error": { "en": "Unable to copy username", "fr": "Impossible de copier le nom d'utilisateur", "es": "No se pudo copiar el nombre de usuario" },
+  "username.copy.empty": { "en": "No username to copy", "fr": "Aucun nom d'utilisateur à copier", "es": "No hay nombre de usuario para copiar" },
+  "accessibility.copyUsername": { "en": "Copy username", "fr": "Copier le nom d'utilisateur", "es": "Copiar nombre de usuario" },
+  "website.open.error": { "en": "Unable to open link", "fr": "Impossible d'ouvrir le lien", "es": "No se pudo abrir el enlace" },
+
+  "password.old.infoTitle": {
+    "en": "Password flagged",
+    "fr": "Mot de passe signalé",
+    "es": "Contraseña señalada"
+  },
+  "password.old.infoMessage": {
+    "en": "This password is older than your configured threshold and is flagged as 'old'. Consider changing it.",
+    "fr": "Ce mot de passe est plus ancien que le seuil configuré et est marqué comme « ancien ». Pensez à le changer.",
+    "es": "Esta contraseña es más antigua que el umbral configurado y está marcada como 'antigua'. Considere cambiarla."
+  },
+  "password.old.infoAccessibility": {
+    "en": "Password flagged as old info",
+    "fr": "Info mot de passe marqué ancien",
+    "es": "Información contraseña marcada como antigua"
+  },
+
+  "passwordGenerator.title": { "en": "Password generator", "fr": "Générateur de mot de passe", "es": "Generador de contraseña" },
+  "passwordGenerator.desc": { "en": "Create a random password and copy it to clipboard (not saved).", "fr": "Génère un mot de passe aléatoire et le copie (non enregistré).", "es": "Crea una contraseña aleatoria y la copia (no se guarda)." },
+  "passwordGenerator.length.placeholder": { "en": "Length (e.g. 12)", "fr": "Longueur (ex. 12)", "es": "Longitud (ej. 12)" },
+  "passwordGenerator.type.full": { "en": "Full (letters+digits+symbols)", "fr": "Complet (lettres+chiffres+symboles)", "es": "Completo (letras+números+símbolos)" },
+  "passwordGenerator.type.digits": { "en": "Digits only", "fr": "Chiffres seulement", "es": "Solo dígitos" },
+  "passwordGenerator.button.generate": { "en": "Generate", "fr": "Générer", "es": "Generar" },
+  "passwordGenerator.button.copy": { "en": "Copy", "fr": "Copier", "es": "Copiar" },
+  "passwordGenerator.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
+  "passwordGenerator.copy.message": { "en": "Password copied to clipboard", "fr": "Mot de passe copié dans le presse-papiers", "es": "Contraseña copiada al portapapeles" },
+  "passwordGenerator.copy.error": { "en": "Unable to copy password", "fr": "Impossible de copier le mot de passe", "es": "No se pudo copiar la contraseña" },
+  "passwordGenerator.copy.noPassword": { "en": "No password to copy", "fr": "Aucun mot de passe à copier", "es": "No hay contraseña para copiar" }
 }

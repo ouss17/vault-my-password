@@ -17,6 +17,7 @@ const Index = () => {
   const t = useT();
   const categories = useSelector((s: RootState) => s.categories.items);
   const passwords = useSelector((s: RootState) => s.passwords.items);
+  const settings = useSelector((s: RootState) => s.settings);
   const [query, setQuery] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
@@ -35,17 +36,40 @@ const Index = () => {
   }, [passwords]);
 
   const data = useMemo(() => {
-    const arr = categories.map((c : any) => ({
+    // compute old ids based on settings
+    const parseTs = (v: any) => (typeof v === "number" ? v : typeof v === "string" ? Date.parse(v) || 0 : 0);
+    const unitToMs = (unit: "days" | "months" | "years", val: number) => {
+      const days =
+        unit === "days" ? val : unit === "months" ? val * 30 : /* years */ val * 365;
+      return days * 24 * 60 * 60 * 1000;
+    };
+
+    const oldIds = new Set<string>();
+    if (settings.oldPasswordMarkerEnabled) {
+      const thresholdVal = Math.max(1, Number(settings.oldPasswordThresholdValue ?? 1));
+      const thresholdUnit = settings.oldPasswordThresholdUnit ?? "months";
+      const thresholdMs = unitToMs(thresholdUnit, thresholdVal);
+      const now = Date.now();
+      for (const p of passwords) {
+        const cts = parseTs((p as any).createdAt);
+        const uts = parseTs((p as any).updatedAt);
+        const last = Math.max(cts || 0, uts || 0);
+        if (last > 0 && now - last > thresholdMs) oldIds.add(p.id);
+      }
+    }
+
+    const arr = categories.map((c: any) => ({
       id: c.id,
       name: c.name,
-      items: grouped.get(c.id) ?? [],
+      // attach runtime flag isOld to each item (CategoryAccordion / PasswordRow should handle unknown props)
+      items: (grouped.get(c.id) ?? []).map((it: any) => ({ ...(it as any), isOld: oldIds.has(it.id) })),
     }));
-    const uncats = grouped.get("uncategorized") ?? [];
+    const uncats = (grouped.get("uncategorized") ?? []).map((it: any) => ({ ...(it as any), isOld: oldIds.has(it.id) }));
     if (uncats.length) {
       arr.push({ id: "uncategorized", name: "Sans catégorie", items: uncats });
     }
     return arr;
-  }, [categories, grouped]);
+  }, [categories, grouped, passwords, settings]);
 
   
   const filteredData = useMemo(() => {
