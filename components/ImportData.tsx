@@ -69,8 +69,10 @@ export default function ImportData() {
       
       const tryFind = (obj: any) => {
         if (!obj || typeof obj !== "object") return { cats: [], pwds: [] };
-        const cats = Array.isArray(obj.categories) ? obj.categories : Array.isArray(obj.categories?.items) ? obj.categories.items : [];
-        const pwds = Array.isArray(obj.passwords) ? obj.passwords : Array.isArray(obj.passwords?.items) ? obj.passwords.items : [];
+        const cats =
+          Array.isArray(obj.categories) ? obj.categories : Array.isArray(obj.categories?.items) ? obj.categories.items : [];
+        const pwds =
+          Array.isArray(obj.passwords) ? obj.passwords : Array.isArray(obj.passwords?.items) ? obj.passwords.items : [];
         return { cats, pwds };
       };
 
@@ -90,8 +92,21 @@ export default function ImportData() {
           const v = parsed[k];
           if (Array.isArray(v) && v.length && typeof v[0] === "object") {
             const sample = v[0];
-            if ("name" in sample && "id" in sample) categoriesArray.push(...v);
-            else if ("username" in sample || "password" in sample || "site" in sample || "title" in sample) passwordsArray.push(...v);
+            if ("name" in sample && "id" in sample) {
+              categoriesArray.push(...v);
+            } else {
+              if (
+                "username" in sample ||
+                "password" in sample ||
+                "mdp" in sample ||
+                "site" in sample ||
+                "website" in sample ||
+                "title" in sample ||
+                "name" in sample
+              ) {
+                passwordsArray.push(...v);
+              }
+            }
           }
         }
       }
@@ -111,8 +126,12 @@ export default function ImportData() {
       const existingPwdIds = new Set(passwords.map((p: any) => p.id));
 
       const normalizeName = (s: any) => (typeof s === "string" ? s.trim().toLowerCase() : "");
-      const pwdKey = (p: any) =>
-        `${(p.title ?? "").toString().trim().toLowerCase()}|${(p.site ?? "").toString().trim().toLowerCase()}|${(p.username ?? "").toString().trim().toLowerCase()}`;
+      const pwdKey = (p: any) => {
+        const title = (p.title ?? p.name ?? "").toString().trim().toLowerCase();
+        const site = (p.site ?? p.website ?? "").toString().trim().toLowerCase();
+        const user = (p.username ?? "").toString().trim().toLowerCase();
+        return `${title}|${site}|${user}`;
+      };
 
       const existingCatNames = new Set(categories.map((c: any) => normalizeName(c.name)));
       const existingPwdKeys = new Set(passwords.map((p: any) => pwdKey(p)));
@@ -135,7 +154,7 @@ export default function ImportData() {
         if (!p) return false;
         if (p.id != null && existingPwdIds.has(p.id)) return false;
         const k = pwdKey(p);
-        if (!k || k === "||") return false;
+        if (!k || k === "||" || k === "| |") return false;
         if (existingPwdKeys.has(k)) return false;
         if (incomingPwdKeysSeen.has(k)) return false;
         incomingPwdKeysSeen.add(k);
