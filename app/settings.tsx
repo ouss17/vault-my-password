@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import ExportAll from "@/components/ExportAll";
 import ExportByCategory from "@/components/ExportByCategory";
 import ImportData from "@/components/ImportData";
+import PasswordGenerator from "@/components/PasswordGenerator";
 import SecuritySettings from "@/components/SecuritySettings";
 import { useT } from "@/utils/useText";
 
@@ -55,7 +56,10 @@ const Settings = () => {
 
           <SecuritySettings />
           
-          <Text style={styles.sectionTitle}>{t("settings.language")}</Text>
+          {/* Password generator (random) */}
+          <PasswordGenerator />
+           
+           <Text style={styles.sectionTitle}>{t("settings.language")}</Text>
           <View style={styles.card}>
             <View style={styles.langRow}>
               <TouchableOpacity style={[styles.langBtn, s.language === "fr" && styles.langBtnActive]} onPress={() => onSetLanguage("fr")}>

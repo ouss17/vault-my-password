@@ -232,5 +232,17 @@
     "en": "Password flagged as old info",
     "fr": "Info mot de passe marqué ancien",
     "es": "Información contraseña marcada como antigua"
-  }
+  },
+
+  "passwordGenerator.title": { "en": "Password generator", "fr": "Générateur de mot de passe", "es": "Generador de contraseña" },
+  "passwordGenerator.desc": { "en": "Create a random password and copy it to clipboard (not saved).", "fr": "Génère un mot de passe aléatoire et le copie (non enregistré).", "es": "Crea una contraseña aleatoria y la copia (no se guarda)." },
+  "passwordGenerator.length.placeholder": { "en": "Length (e.g. 12)", "fr": "Longueur (ex. 12)", "es": "Longitud (ej. 12)" },
+  "passwordGenerator.type.full": { "en": "Full (letters+digits+symbols)", "fr": "Complet (lettres+chiffres+symboles)", "es": "Completo (letras+números+símbolos)" },
+  "passwordGenerator.type.digits": { "en": "Digits only", "fr": "Chiffres seulement", "es": "Solo dígitos" },
+  "passwordGenerator.button.generate": { "en": "Generate", "fr": "Générer", "es": "Generar" },
+  "passwordGenerator.button.copy": { "en": "Copy", "fr": "Copier", "es": "Copiar" },
+  "passwordGenerator.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
+  "passwordGenerator.copy.message": { "en": "Password copied to clipboard", "fr": "Mot de passe copié dans le presse-papiers", "es": "Contraseña copiada al portapapeles" },
+  "passwordGenerator.copy.error": { "en": "Unable to copy password", "fr": "Impossible de copier le mot de passe", "es": "No se pudo copiar la contraseña" },
+  "passwordGenerator.copy.noPassword": { "en": "No password to copy", "fr": "Aucun mot de passe à copier", "es": "No hay contraseña para copiar" }
 }
