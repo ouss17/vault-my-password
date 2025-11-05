@@ -36,7 +36,7 @@ const Index = () => {
   }, [passwords]);
 
   const data = useMemo(() => {
-    // compute old ids based on settings
+    
     const parseTs = (v: any) => (typeof v === "number" ? v : typeof v === "string" ? Date.parse(v) || 0 : 0);
     const unitToMs = (unit: "days" | "months" | "years", val: number) => {
       const days =
@@ -61,7 +61,7 @@ const Index = () => {
     const arr = categories.map((c: any) => ({
       id: c.id,
       name: c.name,
-      // attach runtime flag isOld to each item (CategoryAccordion / PasswordRow should handle unknown props)
+      
       items: (grouped.get(c.id) ?? []).map((it: any) => ({ ...(it as any), isOld: oldIds.has(it.id) })),
     }));
     const uncats = (grouped.get("uncategorized") ?? []).map((it: any) => ({ ...(it as any), isOld: oldIds.has(it.id) }));
@@ -108,7 +108,7 @@ const Index = () => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Header onOpenSettings={() => router.push("/settings")} />
       <View style={styles.content}>
-        {/* Search bar (filtre par catégorie ou mot de passe) */}
+        
         <View style={styles.searchRow}>
           <TextInput
             value={query}

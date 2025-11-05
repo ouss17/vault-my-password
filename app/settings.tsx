@@ -56,7 +56,6 @@ const Settings = () => {
 
           <SecuritySettings />
           
-          {/* Password generator (random) */}
           <PasswordGenerator />
            
            <Text style={styles.sectionTitle}>{t("settings.language")}</Text>
