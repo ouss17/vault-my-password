@@ -108,7 +108,7 @@
 
   "alerts.deleteCategory.forbiddenTitle": { "en": "Deletion forbidden", "fr": "Suppression impossible", "es": "Eliminación prohibida" },
   "alerts.deleteCategory.forbiddenMessage": { "en": "The 'Uncategorized' category cannot be deleted.", "fr": "La catégorie 'Sans catégorie' ne peut pas être supprimée.", "es": "La categoría 'Sin categoría' no se puede eliminar." },
-  "alerts.deleteCategory.confirmTitle": { "en": "Delete category", "fr": "Supprimer la catégorie", "es": "Eliminar la catégorie" },
+  "alerts.deleteCategory.confirmTitle": { "en": "Delete category", "fr": "Supprimer la catégorie", "es": "Eliminar la categoría" },
   "alerts.deleteCategory.confirmMessage": { "en": "Deleting the category \"{name}\" will also remove {count} password(s). Confirm?", "fr": "Supprimer la catégorie \"{name}\" supprimera également {count} mot(s) de passe. Confirmez ?", "es": "Eliminar la categoría \"{name}\" eliminará {count} contraseña(s). ¿Confirmas?" },
   "alerts.deleteCategory.deletedTitle": { "en": "Deleted", "fr": "Supprimé", "es": "Eliminado" },
   "alerts.deleteCategory.deletedMessage": { "en": "Category \"{name}\" has been deleted.", "fr": "La catégorie \"{name}\" a été supprimée.", "es": "La categoría \"{name}\" ha sido eliminada." },
@@ -190,5 +190,7 @@
     "en": "Swipe anywhere to unlock",
     "fr": "Faites glisser n'importe où pour déverrouiller",
     "es": "Desliza en cualquier lugar para desbloquear"
-  }
+  },
+
+  "search.placeholder": { "en": "Search categories or passwords", "fr": "Rechercher catégories ou mots de passe", "es": "Buscar categorías o contraseñas" }
 }
