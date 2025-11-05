@@ -300,8 +300,15 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   }, [locked, scheduleLock, clearInactivity]);
 
   return (
-    
-    <Pressable {...panResponder.panHandlers} style={styles.blocker} onPressIn={onUserActivity}>
+    // capter le début d'interaction sans empêcher la propagation aux enfants
+    <Pressable
+      {...panResponder.panHandlers}
+      style={styles.blocker}
+      onPressIn={onUserActivity}
+      onTouchStart={() => {
+        onUserActivity();
+      }}
+    >
       {children}
       
       <Modal visible={isAuthenticating} transparent animationType="none" onRequestClose={() => {}}>

@@ -47,7 +47,7 @@ const Index = () => {
     return arr;
   }, [categories, grouped]);
 
-  // filteredData: search by category name OR by password name (only)
+  
   const filteredData = useMemo(() => {
     const q = (query ?? "").toString().trim().toLowerCase();
     if (!q) return data;
@@ -55,10 +55,10 @@ const Index = () => {
       .map((cat : any) => {
         const catName = (cat.name ?? "").toString().toLowerCase();
         if (catName.includes(q)) {
-          // category matches -> show full category
+          
           return cat;
         }
-        // else filter items inside category by password name only
+        
         const items = (cat.items ?? []).filter((p: any) => {
           const name = (p.name ?? "").toString().toLowerCase();
           return name.includes(q);
