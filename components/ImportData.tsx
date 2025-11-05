@@ -66,11 +66,13 @@ export default function ImportData() {
         return;
       }
 
-      
+      // try to find categories / passwords arrays in a flexible way (support multiple shapes)
       const tryFind = (obj: any) => {
         if (!obj || typeof obj !== "object") return { cats: [], pwds: [] };
-        const cats = Array.isArray(obj.categories) ? obj.categories : Array.isArray(obj.categories?.items) ? obj.categories.items : [];
-        const pwds = Array.isArray(obj.passwords) ? obj.passwords : Array.isArray(obj.passwords?.items) ? obj.passwords.items : [];
+        const cats =
+          Array.isArray(obj.categories) ? obj.categories : Array.isArray(obj.categories?.items) ? obj.categories.items : [];
+        const pwds =
+          Array.isArray(obj.passwords) ? obj.passwords : Array.isArray(obj.passwords?.items) ? obj.passwords.items : [];
         return { cats, pwds };
       };
 
@@ -90,8 +92,23 @@ export default function ImportData() {
           const v = parsed[k];
           if (Array.isArray(v) && v.length && typeof v[0] === "object") {
             const sample = v[0];
-            if ("name" in sample && "id" in sample) categoriesArray.push(...v);
-            else if ("username" in sample || "password" in sample || "site" in sample || "title" in sample) passwordsArray.push(...v);
+            // category objects usually have id + name
+            if ("name" in sample && "id" in sample) {
+              categoriesArray.push(...v);
+            } else {
+              // accept various password shapes: username, mdp/password, site/website, title/name
+              if (
+                "username" in sample ||
+                "password" in sample ||
+                "mdp" in sample ||
+                "site" in sample ||
+                "website" in sample ||
+                "title" in sample ||
+                "name" in sample
+              ) {
+                passwordsArray.push(...v);
+              }
+            }
           }
         }
       }
@@ -111,8 +128,14 @@ export default function ImportData() {
       const existingPwdIds = new Set(passwords.map((p: any) => p.id));
 
       const normalizeName = (s: any) => (typeof s === "string" ? s.trim().toLowerCase() : "");
-      const pwdKey = (p: any) =>
-        `${(p.title ?? "").toString().trim().toLowerCase()}|${(p.site ?? "").toString().trim().toLowerCase()}|${(p.username ?? "").toString().trim().toLowerCase()}`;
+      // build key from the fields actually found in exported data:
+      // support both title/name and site/website, fallback to username.
+      const pwdKey = (p: any) => {
+        const title = (p.title ?? p.name ?? "").toString().trim().toLowerCase();
+        const site = (p.site ?? p.website ?? "").toString().trim().toLowerCase();
+        const user = (p.username ?? "").toString().trim().toLowerCase();
+        return `${title}|${site}|${user}`;
+      };
 
       const existingCatNames = new Set(categories.map((c: any) => normalizeName(c.name)));
       const existingPwdKeys = new Set(passwords.map((p: any) => pwdKey(p)));
@@ -135,7 +158,8 @@ export default function ImportData() {
         if (!p) return false;
         if (p.id != null && existingPwdIds.has(p.id)) return false;
         const k = pwdKey(p);
-        if (!k || k === "||") return false;
+        // require at least one identifying fragment (title/name or site or username)
+        if (!k || k === "||" || k === "| |") return false;
         if (existingPwdKeys.has(k)) return false;
         if (incomingPwdKeysSeen.has(k)) return false;
         incomingPwdKeysSeen.add(k);
