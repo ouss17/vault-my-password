@@ -1,10 +1,25 @@
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const PasswordRow = ({ id, name, username, onReveal }: { id: string; name: string; username?: string; onReveal: () => void }) => {
+const PasswordRow = ({
+  id,
+  name,
+  username,
+  onReveal,
+  isOld,
+}: {
+  id: string;
+  name: string;
+  username?: string;
+  onReveal: () => void;
+  isOld?: boolean;
+}) => {
   const t = useT();
+  const showOldInfo = () => {
+    Alert.alert(t("password.old.infoTitle"), t("password.old.infoMessage"));
+  };
   return (
     <Pressable
       onPress={onReveal}
@@ -14,9 +29,16 @@ const PasswordRow = ({ id, name, username, onReveal }: { id: string; name: strin
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
       <View style={styles.left}>
-        <Text style={styles.name} numberOfLines={1}>
-          {name}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={[styles.name, isOld ? styles.nameOld : null]} numberOfLines={1}>
+            {name}
+          </Text>
+          {isOld ? (
+            <TouchableOpacity onPress={showOldInfo} style={styles.oldInfoBtn} accessibilityLabel={t("password.old.infoAccessibility")}>
+              <Ionicons name="information-circle-outline" size={16} color="#ff6b6b" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
         <View style={styles.maskRow}>
           <Text style={styles.mask}>{t("password.hidden")}</Text>
           {username ? <Text style={styles.username}>  ·  {username}</Text> : null}
@@ -45,6 +67,9 @@ const styles = StyleSheet.create({
   },
   left: { flex: 1, paddingRight: 8 },
   name: { fontSize: 15, fontWeight: "600", color: "#e6f7ff" },
+  nameRow: { flexDirection: "row", alignItems: "center" },
+  nameOld: { color: "#ff6b6b" },
+  oldInfoBtn: { marginLeft: 6, padding: 4, borderRadius: 6 },
   maskRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
   mask: { fontSize: 13, color: "#9ec5ea" },
   username: { fontSize: 13, color: "#84a7c6" },
