@@ -40,10 +40,11 @@ const Settings = () => {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ ...styles.content, flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode="on-drag"
-          nestedScrollEnabled={true}
+          nestedScrollEnabled={false}
           showsVerticalScrollIndicator={true}
         >
           <View style={styles.headerRow}>
