@@ -299,114 +299,15 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     
   }, [locked, scheduleLock, clearInactivity]);
 
-  // When unlocked: DO NOT wrap children (no global responder) -> avoids blocking scroll on Android.
-  if (!locked) {
-    return (
-      <>
-        {children}
-
-        <Modal visible={isAuthenticating} transparent animationType="none" onRequestClose={() => {}}>
-          <View style={styles.modalBackdrop}>
-            <View style={[styles.modalCard, { alignItems: "center", paddingVertical: 20 }]}>
-              <ActivityIndicator size="large" color="#1e90ff" style={{ marginBottom: 12 }} />
-              <Text style={styles.title}>{t("unlock.authenticating")}</Text>
-              <Text style={styles.hint}>{t("unlock.authenticatingHint")}</Text>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal visible={locked && !showQuestion} animationType="fade" transparent>
-          <View style={styles.modalBackdrop} {...panResponder.panHandlers}>
-            <View style={styles.modalCard}>
-              <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
-              {!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled ? (
-                <Text style={styles.hint}>{t("unlock.swipeToUnlock")}</Text>
-              ) : (
-                <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
-              )}
-              <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-                {settings.fingerprintAuthEnabled ? (
-                  <Pressable
-                    style={[styles.btn, isAuthenticating ? { opacity: 0.6 } : null]}
-                    onPress={async () => {
-                      if (isAuthenticatingRef.current) return;
-                      const ok = await tryUnlock();
-                      if (!ok) {
-                        //
-                      }
-                    }}
-                    disabled={isAuthenticating}
-                  >
-                    <Text style={styles.btnText}>{t("unlock.button.unlock")}</Text>
-                  </Pressable>
-                ) : settings.questionAuthEnabled ? (
-                  <Pressable
-                    style={[styles.btn, isAuthenticating ? { opacity: 0.6 } : null]}
-                    onPress={() => {
-                      if (isAuthenticatingRef.current) return;
-                      setShowQuestion(true);
-                    }}
-                    disabled={isAuthenticating}
-                  >
-                    <Text style={styles.btnText}>{t("unlock.button.answer")}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal visible={showQuestion} animationType="slide" transparent>
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
-              <Text style={styles.title}>{t("unlock.question.title")}</Text>
-              <Text style={styles.hint}>
-                {(settings.selectedQuestionId &&
-                  (() => {
-                    return (settings as any).questionHint ?? t("unlock.question.hintFallback");
-                  })()) ?? t("unlock.question.hintFallback")}
-              </Text>
-
-              <TextInput
-                value={answer}
-                onChangeText={setAnswer}
-                placeholder={t("unlock.answer.placeholder")}
-                placeholderTextColor="#9ec5ea"
-                style={styles.input}
-                secureTextEntry
-                autoFocus
-                returnKeyType="done"
-                onSubmitEditing={handleSubmitAnswer}
-              />
-
-              <View style={styles.btnRow}>
-                <Pressable
-                  style={[styles.smallBtn]}
-                  onPress={() => {
-                    setShowQuestion(false);
-                  }}
-                >
-                  <Text style={styles.smallBtnText}>{t("common.cancel")}</Text>
-                </Pressable>
-                <Pressable style={styles.btn} onPress={handleSubmitAnswer}>
-                  <Text style={styles.btnText}>{t("actions.validate")}</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </>
-    );
-  }
-
-  // When locked: wrap to capture gestures and touches
+  // stable wrapper: always render a Pressable so children are not remounted when locked toggles.
+  // attach pan handlers and capture pointerEvents only when locked.
   return (
     <Pressable
-      {...panResponder.panHandlers}
+      {...(locked ? panResponder.panHandlers : {})}
       style={styles.blocker}
       onPressIn={onUserActivity}
       onTouchStart={() => onUserActivity()}
-      pointerEvents="auto"
+      pointerEvents={locked ? "auto" : "box-none"}
     >
       {children}
 
@@ -421,7 +322,7 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       </Modal>
 
       <Modal visible={locked && !showQuestion} animationType="fade" transparent>
-        <View style={styles.modalBackdrop} {...panResponder.panHandlers}>
+        <View style={styles.modalBackdrop} {...(locked ? panResponder.panHandlers : {})}>
           <View style={styles.modalCard}>
             <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
             {!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled ? (

@@ -1,7 +1,7 @@
-import { upsertCategory } from "@/redux/slices/categoriesSlice";
+import { Category, upsertCategory } from "@/redux/slices/categoriesSlice";
 import { useT } from "@/utils/useText";
 import { nanoid } from "@reduxjs/toolkit";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import type { PasswordItem } from "../redux/slices/pwdSlice";
@@ -164,6 +164,58 @@ const AddPasswordModal = ({
     return true;
   };
 
+  // build suggestions from existing passwords' usernames
+  const passwords = useSelector((s: RootState) => s.passwords.items);
+  const allUsernames = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of passwords) {
+      if (p.username && typeof p.username === "string") set.add(p.username);
+    }
+    return Array.from(set);
+  }, [passwords]);
+
+  // detect if selected category looks like an email category (id, name or nameKey)
+  const isEmailCategory = useMemo(() => {
+    if (!categoryId) return false;
+    const cat = categories.find((c: Category) => c.id === categoryId);
+    const labelCandidate = (cat?.nameKey ?? cat?.name ?? categoryId ?? "").toString().toLowerCase();
+    // check id contains 'email' or name / key contains common email keywords
+    if (categoryId.toString().toLowerCase().includes("email")) return true;
+    return /(^|[^a-z])(email|mail|gmail|outlook|yahoo|courriel)([^a-z]|$)/i.test(labelCandidate);
+  }, [categoryId, categories]);
+
+  // collect domains from existing usernames
+  const emailDomains = useMemo(() => {
+    const set = new Set<string>();
+    for (const u of allUsernames) {
+      const parts = u.split("@");
+      if (parts.length === 2 && parts[1]) set.add(parts[1].toLowerCase());
+    }
+    return Array.from(set);
+  }, [allUsernames]);
+
+  const commonEmailDomains = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.me", "icloud.com"];
+
+  // suggest domains whenever user typed an '@' in username, independent of category
+  const domainSuggestions = useMemo(() => {
+    const raw = (username ?? "").toString();
+    const atIndex = raw.indexOf("@");
+    if (atIndex === -1) return [];
+    const local = raw.slice(0, atIndex);
+    const domainFragment = raw.slice(atIndex + 1).toLowerCase();
+    if (!local) return [];
+    const pool = Array.from(new Set([...emailDomains, ...commonEmailDomains]));
+    // if user typed nothing after @, show top domains + known domains
+    const candidates = domainFragment.length === 0 ? pool : pool.filter((d) => d.startsWith(domainFragment));
+    return candidates.slice(0, 6);
+  }, [username, emailDomains]);
+
+  const usernameSuggestions = useMemo(() => {
+    const q = (username ?? "").toString().trim().toLowerCase();
+    if (!q) return [];
+    return allUsernames.filter((u) => u.toLowerCase().includes(q) && u !== username).slice(0, 6);
+  }, [allUsernames, username]);
+ 
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
@@ -204,6 +256,48 @@ const AddPasswordModal = ({
                 blurOnSubmit={false}
                 onSubmitEditing={() => validateAndFocus(username, websiteRef, false, t("field.username"))}
               />
+              {/* domain completion suggestions when category looks like email and user typed "localpart@" */}
+              {domainSuggestions.length > 0 ? (
+                <View style={styles.suggestions}>
+                  {domainSuggestions.map((dom) => {
+                    const local = username.split("@")[0] ?? "";
+                    return (
+                      <TouchableOpacity
+                        key={`d:${dom}`}
+                        style={styles.suggestionItem}
+                        onPress={() => {
+                          setUsername(`${local}@${dom}`);
+                          // focus next field after selecting suggestion
+                          if (websiteRef.current) websiteRef.current.focus();
+                        }}
+                      >
+                        <Text style={styles.suggestionText}>
+                          {local}@<Text style={{ opacity: 0.9 }}>{dom}</Text>
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              {/* general username suggestions (non-forcing) */}
+              {usernameSuggestions.length > 0 ? (
+                <View style={styles.suggestions}>
+                  {usernameSuggestions.map((sug) => (
+                    <TouchableOpacity
+                      key={sug}
+                      style={styles.suggestionItem}
+                      onPress={() => {
+                        setUsername(sug);
+                        // focus next field after selecting suggestion
+                        if (websiteRef.current) websiteRef.current.focus();
+                      }}
+                    >
+                      <Text style={styles.suggestionText}>{sug}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.field}>
@@ -343,6 +437,17 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.inputBg,
   },
+  suggestions: {
+    marginTop: 6,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  suggestionItem: { paddingVertical: 8, paddingHorizontal: 10 },
+  suggestionText: { color: colors.textPrimary },
+  // no extra styles needed for domain suggestions (reuses suggestions styles)
   textarea: { minHeight: 72, textAlignVertical: "top" },
   categories: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
   catChip: {

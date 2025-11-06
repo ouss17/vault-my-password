@@ -121,6 +121,21 @@ const PasswordDetailModal = ({
      }
    };
 
+   const handleCopyTitle = async () => {
+     try {
+       const toCopy = item.name ?? "";
+       if (!toCopy) {
+         Alert.alert(t("alert.error.title"), t("title.copy.empty"));
+         return;
+       }
+       await Clipboard.setStringAsync(toCopy);
+       Alert.alert(t("title.copy.title"), t("title.copy.message"));
+     } catch (err) {
+       console.error("Copy title error:", err);
+       Alert.alert(t("alert.error.title"), t("title.copy.error"));
+     }
+   };
+
    return (
      <>
        <Modal visible={visible} animationType="slide" transparent>
@@ -135,11 +150,20 @@ const PasswordDetailModal = ({
 
              <ScrollView style={styles.body}>
                <Text style={styles.label}>{t("field.name")}</Text>
-               <Text style={styles.value}>{item.name}</Text>
+               <View style={styles.usernameRow}>
+                 <Text style={[styles.value, styles.flexText]} numberOfLines={1} ellipsizeMode="tail">
+                   {item.name ?? "-"}
+                 </Text>
+                 {item.name ? (
+                   <TouchableOpacity onPress={handleCopyTitle} style={styles.copyBtn} accessibilityLabel={t("accessibility.copyTitle")}>
+                     <Ionicons name="copy-outline" size={18} color="#9ec5ea" />
+                   </TouchableOpacity>
+                 ) : null}
+               </View>
 
                <Text style={styles.label}>{t("field.username")}</Text>
                <View style={styles.usernameRow}>
-                 <Text style={styles.value} numberOfLines={1} ellipsizeMode="middle">
+                 <Text style={[styles.value, styles.flexText]} numberOfLines={1} ellipsizeMode="tail">
                    {item.username ?? "-"}
                  </Text>
                  {item.username ? (
@@ -167,7 +191,7 @@ const PasswordDetailModal = ({
                        }
                      }}
                    >
-                     <Text style={[styles.value, styles.link]} numberOfLines={1} ellipsizeMode="middle">
+                     <Text style={[styles.value, styles.link]} numberOfLines={1} ellipsizeMode="tail">
                        {url}
                      </Text>
                    </TouchableOpacity>
@@ -182,7 +206,7 @@ const PasswordDetailModal = ({
 
                <Text style={styles.label}>{t("field.password")}</Text>
                <View style={styles.passwordRow}>
-                 <Text style={styles.passwordText} numberOfLines={1} ellipsizeMode="middle">
+                 <Text style={[styles.passwordText, styles.flexText]} numberOfLines={1} ellipsizeMode="tail">
                    {decrypted != null ? decrypted : t("password.hidden")}
                  </Text>
                  <TouchableOpacity onPress={handleCopyPassword} style={styles.copyBtn} accessibilityLabel={t("accessibility.copyPassword")}>
@@ -249,9 +273,10 @@ const styles = StyleSheet.create({
   label: { color: colors.label, marginTop: 8, marginBottom: 6 },
   value: { color: "#e6f7ff", fontSize: 15 },
   usernameRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
-  passwordRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
+  passwordRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   passwordText: { fontSize: 18, fontWeight: "600", color: colors.passwordText },
-  copyBtn: { marginLeft: 12, padding: 6, borderRadius: 6 },
+  copyBtn: { marginLeft: 12, padding: 6, borderRadius: 6, minWidth: 36, alignItems: "center", justifyContent: "center" },
+  flexText: { flex: 1, marginRight: 8, overflow: "hidden" },
   link: { color: "#1e90ff", textDecorationLine: "underline" },
   metaRow: { marginTop: 8, flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
   metaText: { color: "#9ec5ea", fontSize: 12, marginRight: 12 },
