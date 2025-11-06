@@ -2,8 +2,11 @@ import AddPasswordModal from "@/components/AddPasswordModal";
 import CategoryAccordion from "@/components/CategoryAccordion";
 import Fab from "@/components/Fab";
 import Header from "@/components/Header";
+import LanguageSelectionModal from "@/components/LanguageSelectionModal";
 import PasswordDetailModal from "@/components/PasswordDetailModal";
 import type { PasswordItem } from "@/redux/slices/pwdSlice";
+import { finalizeFirstRun, initializeFirstRun } from "@/redux/slices/settingsSlice";
+import type { AppDispatch } from "@/redux/store";
 import { RootState } from "@/redux/store";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,13 +14,26 @@ import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const Index = () => {
+  // const clearAll = async () => {
+  //   try {
+  //     await AsyncStorage.clear();
+  //     console.log('Local storage vidé !');
+  //   } catch (e) {
+  //     console.error('Erreur lors du nettoyage', e);
+  //   }
+  // };
+  // clearAll();
   const t = useT();
   const categories = useSelector((s: RootState) => s.categories.items);
   const passwords = useSelector((s: RootState) => s.passwords.items);
   const settings = useSelector((s: RootState) => s.settings);
+  const dispatch = useDispatch<AppDispatch>();
   const [query, setQuery] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
@@ -34,6 +50,11 @@ const Index = () => {
     });
     return map;
   }, [passwords]);
+
+  // run initialization (no-op if language setup is still required)
+  React.useEffect(() => {
+    dispatch(initializeFirstRun());
+  }, [dispatch]);
 
   const data = useMemo(() => {
     
@@ -154,6 +175,15 @@ const Index = () => {
         passwordId={detailId}
         onClose={() => setDetailId(null)}
         onEdit={handleEditFromDetail} 
+      />
+
+      {/* Language selection shown at first launch when language not set yet */}
+      <LanguageSelectionModal
+        visible={!!(settings?.isFirstLaunch && settings?.needsLanguageSetup)}
+        onSelect={(lang) => {
+          // finalizeFirstRun will set language, create localized categories/examples and mark first launch done
+          dispatch(finalizeFirstRun(lang));
+        }}
       />
 
     </SafeAreaView>

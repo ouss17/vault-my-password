@@ -233,6 +233,7 @@
     "fr": "Info mot de passe marqué ancien",
     "es": "Información contraseña marcada como antigua"
   },
+  "category.label": { "en": "Category", "fr": "Catégorie", "es": "Categoría" },
 
   "passwordGenerator.title": { "en": "Password generator", "fr": "Générateur de mot de passe", "es": "Generador de contraseña" },
   "passwordGenerator.desc": { "en": "Create a random password and copy it to clipboard (not saved).", "fr": "Génère un mot de passe aléatoire et le copie (non enregistré).", "es": "Crea una contraseña aleatoria y la copia (no se guarda)." },
