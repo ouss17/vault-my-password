@@ -55,7 +55,7 @@
   "modal.editPassword.title": { "en": "Edit password", "fr": "Modifier le mot de passe", "es": "Editar contraseña" },
   "modal.passwordDetail.title": { "en": "Details", "fr": "Détail", "es": "Detalle" },
 
-  "field.name": { "en": "Name", "fr": "Nom", "es": "Nombre" },
+  "field.name": { "en": "Title", "fr": "Titre", "es": "Título" },
   "field.username": { "en": "Username", "fr": "Nom d'utilisateur", "es": "Usuario" },
   "field.website": { "en": "Site", "fr": "Site", "es": "Sitio" },
   "field.password": { "en": "Password", "fr": "Mot de passe", "es": "Contraseña" },
@@ -244,5 +244,10 @@
   "passwordGenerator.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
   "passwordGenerator.copy.message": { "en": "Password copied to clipboard", "fr": "Mot de passe copié dans le presse-papiers", "es": "Contraseña copiada al portapapeles" },
   "passwordGenerator.copy.error": { "en": "Unable to copy password", "fr": "Impossible de copier le mot de passe", "es": "No se pudo copiar la contraseña" },
-  "passwordGenerator.copy.noPassword": { "en": "No password to copy", "fr": "Aucun mot de passe à copier", "es": "No hay contraseña para copiar" }
+  "passwordGenerator.copy.noPassword": { "en": "No password to copy", "fr": "Aucun mot de passe à copier", "es": "No hay contraseña para copiar" },
+  "title.copy.title": { "en": "Copied", "fr": "Copié", "es": "Copiado" },
+  "title.copy.message": { "en": "Title copied to clipboard", "fr": "Titre copié dans le presse-papiers", "es": "Título copiado al portapapeles" },
+  "title.copy.error": { "en": "Unable to copy title", "fr": "Impossible de copier le titre", "es": "No se pudo copiar el título" },
+  "title.copy.empty": { "en": "No title to copy", "fr": "Aucun titre à copier", "es": "No hay título para copiar" },
+  "accessibility.copyTitle": { "en": "Copy title", "fr": "Copier le titre", "es": "Copiar título" }
 }

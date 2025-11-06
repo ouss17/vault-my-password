@@ -1,7 +1,7 @@
 import { upsertCategory } from "@/redux/slices/categoriesSlice";
 import { useT } from "@/utils/useText";
 import { nanoid } from "@reduxjs/toolkit";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import type { PasswordItem } from "../redux/slices/pwdSlice";
@@ -164,6 +164,22 @@ const AddPasswordModal = ({
     return true;
   };
 
+  // build suggestions from existing passwords' usernames
+  const passwords = useSelector((s: RootState) => s.passwords.items);
+  const allUsernames = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of passwords) {
+      if (p.username && typeof p.username === "string") set.add(p.username);
+    }
+    return Array.from(set);
+  }, [passwords]);
+
+  const usernameSuggestions = useMemo(() => {
+    const q = (username ?? "").toString().trim().toLowerCase();
+    if (!q) return [];
+    return allUsernames.filter((u) => u.toLowerCase().includes(q) && u !== username).slice(0, 6);
+  }, [allUsernames, username]);
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
@@ -204,6 +220,24 @@ const AddPasswordModal = ({
                 blurOnSubmit={false}
                 onSubmitEditing={() => validateAndFocus(username, websiteRef, false, t("field.username"))}
               />
+              {/* suggestions */}
+              {usernameSuggestions.length > 0 ? (
+                <View style={styles.suggestions}>
+                  {usernameSuggestions.map((sug) => (
+                    <TouchableOpacity
+                      key={sug}
+                      style={styles.suggestionItem}
+                      onPress={() => {
+                        setUsername(sug);
+                        // focus next field after selecting suggestion
+                        if (websiteRef.current) websiteRef.current.focus();
+                      }}
+                    >
+                      <Text style={styles.suggestionText}>{sug}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.field}>
@@ -343,6 +377,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.inputBg,
   },
+  suggestions: {
+    marginTop: 6,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  suggestionItem: { paddingVertical: 8, paddingHorizontal: 10 },
+  suggestionText: { color: colors.textPrimary },
   textarea: { minHeight: 72, textAlignVertical: "top" },
   categories: { flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
   catChip: {
