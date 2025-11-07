@@ -1,15 +1,19 @@
 import type { RootState } from "@/redux/store";
 import { isLockSuspended } from "@/utils/lockSuspend";
 import { useT } from "@/utils/useText";
+import { BlurView } from "expo-blur";
 import * as Crypto from "expo-crypto";
 import * as LocalAuthentication from "expo-local-authentication";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, AppStateStatus, Modal, PanResponder, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, AppState, AppStateStatus, Image, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { captureRef } from "react-native-view-shot";
 import { useSelector } from "react-redux";
 
 const styles = StyleSheet.create({
   blocker: { flex: 1 },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(2,8,14,0.85)", justifyContent: "center", padding: 20 },
+  modalBackdrop: { flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 20 },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,8,14,0.65)" },
+  modalBackdropFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,8,14,0.85)" },
   modalCard: { backgroundColor: "#0b3a50", borderRadius: 10, padding: 16 },
   title: { color: "#e6f7ff", fontWeight: "700", fontSize: 16, marginBottom: 8 },
   hint: { color: "#9ec5ea", marginBottom: 8 },
@@ -41,7 +45,24 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   const inactivityRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
 
-  
+  const rootRef = useRef<View | null>(null); 
+  const [snapshotUri, setSnapshotUri] = useState<string | null>(null);
+  const takingSnapshotRef = useRef(false);
+
+  const takeSnapshot = useCallback(async () => {
+    if (!rootRef.current || takingSnapshotRef.current) return;
+    try {
+      takingSnapshotRef.current = true;
+      const base64 = await captureRef(rootRef.current, { format: "png", quality: 0.7, result: "base64" });
+      setSnapshotUri(`data:image/png;base64,${base64}`);
+    } catch (e) {
+      console.warn("UnlockGate: snapshot failed", e);
+      setSnapshotUri(null);
+    } finally {
+      takingSnapshotRef.current = false;
+    }
+  }, []);
+
   const settingsRef = useRef(settings);
   useEffect(() => {
     settingsRef.current = settings;
@@ -201,21 +222,16 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     };
     
   }, []); 
-  
   useEffect(() => {
-    if (!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled) {
-      
-      clearInactivity();
-      setShowQuestion(false);
-      setLocked(false);
-      lastActivityRef.current = Date.now();
-      
+    if (locked) {
+      const id = setTimeout(() => {
+        takeSnapshot();
+      }, 50);
+      return () => clearTimeout(id);
     } else {
-      
-      if (!settings.questionAuthEnabled) setShowQuestion(false);
+      setSnapshotUri(null);
     }
-    
-  }, [settings.fingerprintAuthEnabled, settings.questionAuthEnabled]);
+  }, [locked, takeSnapshot]);
 
   const onUserActivity = () => {
     
@@ -247,17 +263,15 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gs) => {
-        if (!locked) return false;
+        if (!lockedRef.current) return false;
         const currentSettings = settingsRef.current;
         if (currentSettings.fingerprintAuthEnabled || currentSettings.questionAuthEnabled) return false;
-
         return Math.abs(gs.dy) > 20 || Math.abs(gs.dx) > 20;
       },
       onPanResponderRelease: (_, gs) => {
-        if (!locked) return;
+        if (!lockedRef.current) return;
         const currentSettings = settingsRef.current;
         if (currentSettings.fingerprintAuthEnabled || currentSettings.questionAuthEnabled) return;
-        
         if (gs.dy < -30 || Math.abs(gs.dx) > 40) {
           setLocked(false);
           lastActivityRef.current = Date.now();
@@ -266,6 +280,11 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       },
     })
   ).current;
+
+  const lockedRef = useRef(locked);
+  useEffect(() => {
+    lockedRef.current = locked;
+  }, [locked]);
 
   
   useEffect(() => {
@@ -299,37 +318,47 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     
   }, [locked, scheduleLock, clearInactivity]);
 
-  // stable wrapper: always render a Pressable so children are not remounted when locked toggles.
-  // attach pan handlers and capture pointerEvents only when locked.
   return (
-    <Pressable
-      {...(locked ? panResponder.panHandlers : {})}
-      style={styles.blocker}
-      onPressIn={onUserActivity}
-      onTouchStart={() => onUserActivity()}
-      pointerEvents={locked ? "auto" : "box-none"}
-    >
-      {children}
+    <View style={styles.blocker}>
+      <View ref={rootRef} collapsable={false} style={{ flex: 1 }}>
+        {children}
+      </View>
 
       <Modal visible={isAuthenticating} transparent animationType="none" onRequestClose={() => {}}>
         <View style={styles.modalBackdrop}>
+          {snapshotUri ? (
+            <Image source={{ uri: snapshotUri }} style={StyleSheet.absoluteFill} blurRadius={Platform.OS === "android" ? 16 : 8} />
+          ) : Platform.OS === "ios" ? (
+            <BlurView intensity={10} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={styles.modalBackdropFallback} />
+          )}
+          <View style={styles.modalOverlay} />
           <View style={[styles.modalCard, { alignItems: "center", paddingVertical: 20 }]}>
-            <ActivityIndicator size="large" color="#1e90ff" style={{ marginBottom: 12 }} />
-            <Text style={styles.title}>{t("unlock.authenticating")}</Text>
-            <Text style={styles.hint}>{t("unlock.authenticatingHint")}</Text>
-          </View>
-        </View>
-      </Modal>
+             <ActivityIndicator size="large" color="#1e90ff" style={{ marginBottom: 12 }} />
+             <Text style={styles.title}>{t("unlock.authenticating")}</Text>
+             <Text style={styles.hint}>{t("unlock.authenticatingHint")}</Text>
+           </View>
+         </View>
+       </Modal>
 
-      <Modal visible={locked && !showQuestion} animationType="fade" transparent>
-        <View style={styles.modalBackdrop} {...(locked ? panResponder.panHandlers : {})}>
-          <View style={styles.modalCard}>
-            <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
-            {!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled ? (
-              <Text style={styles.hint}>{t("unlock.swipeToUnlock")}</Text>
-            ) : (
-              <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
-            )}
+       <Modal visible={locked && !showQuestion} animationType="fade" transparent>
+        <View style={styles.modalBackdrop} {...panResponder.panHandlers}>
+          {snapshotUri ? (
+            <Image source={{ uri: snapshotUri }} style={StyleSheet.absoluteFill} blurRadius={Platform.OS === "android" ? 18 : 10} />
+          ) : Platform.OS === "ios" ? (
+            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={styles.modalBackdropFallback} />
+          )}
+          <View style={styles.modalOverlay} />
+           <View style={styles.modalCard}>
+             <Text style={styles.title}>{t("unlock.lockedTitle")}</Text>
+             {!settings.fingerprintAuthEnabled && !settings.questionAuthEnabled ? (
+               <Text style={styles.hint}>{t("unlock.swipeToUnlock")}</Text>
+             ) : (
+               <Text style={styles.hint}>{t("unlock.lockedHint")}</Text>
+             )}
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
               {/* fingerprint / question buttons */}
@@ -366,14 +395,22 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
 
       <Modal visible={showQuestion} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.title}>{t("unlock.question.title")}</Text>
-            <Text style={styles.hint}>
-              {(settings.selectedQuestionId &&
-                (() => {
-                  return (settings as any).questionHint ?? t("unlock.question.hintFallback");
-                })()) ?? t("unlock.question.hintFallback")}
-            </Text>
+          {snapshotUri ? (
+            <Image source={{ uri: snapshotUri }} style={StyleSheet.absoluteFill} blurRadius={Platform.OS === "android" ? 18 : 10} />
+          ) : Platform.OS === "ios" ? (
+            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={styles.modalBackdropFallback} />
+          )}
+          <View style={styles.modalOverlay} />
+           <View style={styles.modalCard}>
+             <Text style={styles.title}>{t("unlock.question.title")}</Text>
+             <Text style={styles.hint}>
+               {(settings.selectedQuestionId &&
+                 (() => {
+                   return (settings as any).questionHint ?? t("unlock.question.hintFallback");
+                 })()) ?? t("unlock.question.hintFallback")}
+             </Text>
 
             <TextInput
               value={answer}
@@ -403,6 +440,6 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
           </View>
         </View>
       </Modal>
-    </Pressable>
+    </View>
   );
 }
