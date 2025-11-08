@@ -1,5 +1,6 @@
 import { Category, upsertCategory } from "@/redux/slices/categoriesSlice";
 import { useT } from "@/utils/useText";
+import { Ionicons } from "@expo/vector-icons";
 import { nanoid } from "@reduxjs/toolkit";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -145,6 +146,7 @@ const AddPasswordModal = ({
   const websiteRef = useRef<TextInput | null>(null);
   const mdpRef = useRef<TextInput | null>(null);
   const notesRef = useRef<TextInput | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   
   const validateAndFocus = (
@@ -220,7 +222,12 @@ const AddPasswordModal = ({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
         <View style={styles.modal}>
-          <Text style={styles.title}>{isEdit ? t("modal.editPassword.title") : t("modal.addPassword.title")}</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>{isEdit ? t("modal.editPassword.title") : t("modal.addPassword.title")}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityLabel={t("actions.close")}>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.field}>
@@ -321,46 +328,35 @@ const AddPasswordModal = ({
                 {t("field.password")}
                 <Text style={styles.required}> {isEdit ? "" : "*"}</Text>
               </Text>
-              <TextInput
-                ref={mdpRef}
-                placeholder={isEdit ? t("field.password.keep") : t("field.password.placeholder")}
-                value={mdp}
-                onChangeText={setMdp}
-                style={styles.input}
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry
-                autoCapitalize="none"
-                returnKeyType="next"
-                blurOnSubmit={false}
-                onSubmitEditing={() => {
-                  
-                  const required = !isEdit;
-                  const ok = validateAndFocus(mdp, notesRef, required, "Mot de passe");
-                  if (!ok && mdpRef.current) mdpRef.current.focus();
-                }}
-              />
+              <View style={styles.passwordRow}>
+                <TextInput
+                  ref={mdpRef}
+                  placeholder={isEdit ? t("field.password.keep") : t("field.password.placeholder")}
+                  value={mdp}
+                  onChangeText={setMdp}
+                  style={[styles.input, styles.passwordInput]}
+                  placeholderTextColor={colors.textSecondary}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    const required = !isEdit;
+                    const ok = validateAndFocus(mdp, notesRef, required, "Mot de passe");
+                    if (!ok && mdpRef.current) mdpRef.current.focus();
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((s) => !s)}
+                  style={styles.eyeBtn}
+                  accessibilityLabel={showPassword ? t("accessibility.hidePassword") : t("accessibility.showPassword")}
+                >
+                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>{t("field.notes")}</Text>
-              <TextInput
-                ref={notesRef}
-                placeholder={t("field.notes.placeholder")}
-                value={notes}
-                onChangeText={setNotes}
-                style={[styles.input, styles.textarea]}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={3}
-                returnKeyType="done"
-                onSubmitEditing={() => {
-                  
-                  submit();
-                }}
-              />
-            </View>
-
-            <Text style={[styles.label, { marginTop: 8 }]}>Catégorie</Text>
+            <Text style={[styles.label, { marginTop: 8 }]}>{t("category.label")}</Text>
             <View style={styles.categories}>
               <TouchableOpacity
                 onPress={() => setCategoryId(undefined)}
@@ -405,6 +401,25 @@ const AddPasswordModal = ({
               </View>
             )}
 
+            {/* Notes placé après la catégorie */}
+            <View style={styles.field}>
+              <Text style={styles.label}>{t("field.notes")}</Text>
+              <TextInput
+                ref={notesRef}
+                placeholder={t("field.notes.placeholder")}
+                value={notes}
+                onChangeText={setNotes}
+                style={[styles.input, styles.textarea]}
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={3}
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  submit();
+                }}
+              />
+            </View>
+
             <View style={styles.actions}>
               <TouchableOpacity onPress={onClose} style={styles.btn}>
                 <Text style={styles.btnText}>{t("actions.cancel")}</Text>
@@ -424,6 +439,8 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: "center", padding: 20 },
   modal: { backgroundColor: colors.modalBg, borderRadius: 8, padding: 14, maxHeight: "90%" },
   title: { fontSize: 18, fontWeight: "700", marginBottom: 8, color: colors.textPrimary },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  closeBtn: { padding: 8, marginLeft: 8 },
   scroll: { paddingBottom: 6 },
   field: { marginBottom: 10 },
   label: { color: colors.textSecondary, marginBottom: 6, fontWeight: "600" },
@@ -437,6 +454,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.inputBg,
   },
+  passwordRow: { flexDirection: "row", alignItems: "center" },
+  passwordInput: { flex: 1, marginRight: 8 },
+  eyeBtn: { padding: 8, borderRadius: 8 },
   suggestions: {
     marginTop: 6,
     backgroundColor: "rgba(255,255,255,0.02)",
