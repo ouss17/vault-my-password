@@ -162,7 +162,6 @@ const CategoryAccordion = ({
   const startEdit = () => {
     setEditName(categoryName);
     setEditing(true);
-    // ensure input visible on small screens
     setTimeout(() => Keyboard.dismiss(), 50);
   };
 
