@@ -1,4 +1,4 @@
-import { addCategory, deleteCategoryAndPasswords } from "@/redux/slices/categoriesSlice";
+import { addCategory, deleteCategoryAndPasswords, upsertCategory } from "@/redux/slices/categoriesSlice";
 import { upsertPassword } from "@/redux/slices/pwdSlice";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,10 +6,13 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Keyboard,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useDispatch } from "react-redux";
@@ -37,7 +40,9 @@ const CategoryAccordion = ({
   const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false); 
-
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState<string>(categoryName);
+ 
   const progress = useRef(new Animated.Value(0)).current; 
   const rotate = useRef(new Animated.Value(0)).current;
 
@@ -154,6 +159,33 @@ const CategoryAccordion = ({
     );
   };
 
+  const startEdit = () => {
+    setEditName(categoryName);
+    setEditing(true);
+    // ensure input visible on small screens
+    setTimeout(() => Keyboard.dismiss(), 50);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditName(categoryName);
+  };
+
+  const saveEdit = () => {
+    const name = (editName ?? "").toString().trim();
+    if (!name) {
+      Alert.alert(t("alert.error.title"), t("validation.requiredFields"));
+      return;
+    }
+    try {
+      dispatch(upsertCategory({ id: categoryId, name, updatedAt: Date.now() } as any));
+      setEditing(false);
+    } catch (err) {
+      console.error("Update category error:", err);
+      Alert.alert(t("alert.error.title"), t("alerts.updateCategory.errorMessage") ?? t("alert.error.generic"));
+    }
+  };
+
   return (
     <View style={styles.wrapper}>
       <Pressable
@@ -162,26 +194,62 @@ const CategoryAccordion = ({
         android_ripple={{ color: "rgba(255,255,255,0.03)" }}
       >
         <View style={styles.headerLeft}>
-          <Text style={styles.title} numberOfLines={1}>
-            {categoryName}
-          </Text>
+          {editing ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TextInput
+                value={editName}
+                onChangeText={setEditName}
+                style={styles.editInput}
+                placeholder={t("category.editPlaceholder") ?? ""}
+                placeholderTextColor={"#9ec5ea"}
+                numberOfLines={1}
+                maxLength={80}
+              />
+            </View>
+          ) : (
+            <Text style={styles.title} numberOfLines={1}>
+              {categoryName}
+            </Text>
+          )}
           <Text style={styles.count}>
             {items.length} {items.length > 1 ? t("category.count.plural") : t("category.count.singular")}
           </Text>
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable
-            onPress={onDeleteCategory}
-            style={styles.iconBtn}
-            android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
-            accessibilityLabel={`${t("accessibility.deleteCategory")} ${categoryName}`}
-          >
-            <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-          </Pressable>
+          {editing ? (
+            <>
+              <TouchableOpacity onPress={saveEdit} style={styles.iconBtn} accessibilityLabel={t("actions.save")}>
+                <Ionicons name="checkmark" size={22} color="#9ec5ea" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancelEdit} style={styles.iconBtn} accessibilityLabel={t("common.cancel")}>
+                <Ionicons name="close" size={22} color="#9ec5ea" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Pressable
+                onPress={() => startEdit()}
+                style={styles.iconBtn}
+                android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
+                accessibilityLabel={`${t("accessibility.editCategory")} ${categoryName}`}
+              >
+                <Ionicons name="pencil-outline" size={22} color="#9ec5ea" />
+              </Pressable>
+
+              <Pressable
+                onPress={onDeleteCategory}
+                style={styles.iconBtn}
+                android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
+                accessibilityLabel={`${t("accessibility.deleteCategory")} ${categoryName}`}
+              >
+                <Ionicons name="trash-outline" size={22} color="#ff6b6b" />
+              </Pressable>
+            </>
+          )}
 
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons name="chevron-down" size={20} color={styles.iconColor.color} />
+            <Ionicons name="chevron-down" size={24} color={styles.iconColor.color} />
           </Animated.View>
         </View>
       </Pressable>
@@ -223,8 +291,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   headerLeft: { maxWidth: "85%" },
+  editInput: {
+    borderWidth: 1,
+    borderColor: "rgba(158,197,234,0.12)",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    color: "#e6f7ff",
+    minWidth: 140,
+    maxWidth: "85%",
+  },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  iconBtn: { padding: 6, borderRadius: 20 },
+  iconBtn: { padding: 8, borderRadius: 20, minWidth: 40, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 16, fontWeight: "700", color: "#e6f7ff" },
   count: { fontSize: 12, color: "#9ec5ea", marginTop: 4 },
   content: {

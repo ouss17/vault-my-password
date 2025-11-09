@@ -7,7 +7,13 @@ const colors = {
   textPrimary: "#e6f7ff",
 };
 
-const Header = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
+const Header = ({
+  onOpenSettings,
+  onOpenCategorySort,
+}: {
+  onOpenSettings: () => void;
+  onOpenCategorySort?: () => void;
+}) => {
   return (
     <View style={styles.container}>
       <Image
@@ -16,9 +22,16 @@ const Header = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
         accessibilityLabel="Vault My Password"
         resizeMode="contain"
       />
-      <TouchableOpacity onPress={onOpenSettings} style={styles.icon}>
-        <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
+      <View style={styles.iconGroup}>
+
+        <TouchableOpacity onPress={onOpenCategorySort} style={styles.icon}>
+          <Ionicons name="reorder-three-outline" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onOpenSettings} style={styles.icon}>
+          <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -32,7 +45,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: { width: 160, height: 50 }, 
-  icon: { position: "absolute", right: 16, padding: 8 },
+  iconGroup: { position: "absolute", right: 12, flexDirection: "row", alignItems: "center", gap: 8 },
+  icon: { padding: 8, marginLeft: 6 },
 });
 
 export default Header;

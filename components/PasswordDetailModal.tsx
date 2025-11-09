@@ -138,11 +138,9 @@ const PasswordDetailModal = ({
 
    return (
      <>
-       <Modal visible={visible} animationType="slide" transparent>
-         {/* outer TouchableWithoutFeedback closes modal when tapping outside */}
+       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
          <TouchableWithoutFeedback onPress={onClose}>
            <View style={[styles.backdrop]}>
-             {/* inner TouchableWithoutFeedback prevents closing when interacting inside the modal */}
              <TouchableWithoutFeedback onPress={() => {}}>
                <View style={styles.modal}>
                  <View style={styles.header}>
@@ -216,7 +214,6 @@ const PasswordDetailModal = ({
                        <Ionicons name="copy-outline" size={18} color="#9ec5ea" />
                      </TouchableOpacity>
                    </View>
-                   {/* creation / modification dates */}
                    {(() => {
                      const parseTs = (v: any) => (typeof v === "number" ? v : typeof v === "string" ? Date.parse(v) || 0 : 0);
                      const formatDate = (ts: number | 0 | null) => {
