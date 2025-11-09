@@ -121,6 +121,10 @@ const AddPasswordModal = ({
       Alert.alert(t("alert.error.title"), t("validation.categoryNameRequired"));
       return;
     }
+    if (nm.length > 20) {
+      Alert.alert(t("alert.error.title"), t("validation.categoryNameTooLong") ?? "Category name is too long (max 20)");
+      return;
+    }
     const exists = categories.find((c : { id: string; name: string; createdAt: number; updatedAt: number; }) => c.name.toLowerCase() === nm.toLowerCase());
     if (exists) {
       setCategoryId(exists.id);
@@ -393,7 +397,11 @@ const AddPasswordModal = ({
                   onChangeText={setNewCategoryName}
                   style={[styles.input, styles.newCategoryInput]}
                   placeholderTextColor={colors.textSecondary}
+                  maxLength={20}
                 />
+                <Text style={[styles.charCount, newCategoryName.length >= 20 ? styles.charCountWarning : null]}>
+                  {newCategoryName.length}/20
+                </Text>
                 <TouchableOpacity onPress={handleAddCategory} style={styles.addCategoryBtn}>
                   <Text style={styles.addCategoryBtnText}>{t("category.addButton")}</Text>
                 </TouchableOpacity>
@@ -487,9 +495,11 @@ const styles = StyleSheet.create({
   
   addCategoryRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
   newCategoryInput: { flex: 1, marginRight: 8 },
-  addCategoryBtn: { backgroundColor: colors.accent, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
-  addCategoryBtnText: { color: "#fff", fontWeight: "600" },
-  addCategoryCancel: { marginLeft: 8 },
+  charCount: { color: colors.textSecondary, fontSize: 12, marginLeft: 8, alignSelf: "center" },
+  charCountWarning: { color: colors.required },
+   addCategoryBtn: { backgroundColor: colors.accent, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
+   addCategoryBtnText: { color: "#fff", fontWeight: "600" },
+   addCategoryCancel: { marginLeft: 8 },
 
   actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 12 },
   btn: { padding: 10, marginLeft: 8 },

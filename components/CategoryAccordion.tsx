@@ -195,7 +195,7 @@ const CategoryAccordion = ({
       >
         <View style={styles.headerLeft}>
           {editing ? (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               <TextInput
                 value={editName}
                 onChangeText={setEditName}
@@ -203,8 +203,17 @@ const CategoryAccordion = ({
                 placeholder={t("category.editPlaceholder") ?? ""}
                 placeholderTextColor={"#9ec5ea"}
                 numberOfLines={1}
-                maxLength={80}
+                maxLength={20}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={() => {
+                  saveEdit();
+                  Keyboard.dismiss();
+                }}
               />
+              <Text style={[styles.charCount, editName.length >= 20 ? styles.charCountWarning : null]}>
+                {editName.length}/20
+              </Text>
             </View>
           ) : (
             <Text style={styles.title} numberOfLines={1}>
@@ -298,9 +307,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     color: "#e6f7ff",
-    minWidth: 140,
-    maxWidth: "85%",
+    minWidth: 80,
+    flex: 1,
+    marginRight: 8,
   },
+  charCount: { color: "#9ec5ea", fontSize: 12, marginLeft: 8 },
+  charCountWarning: { color: "#ff6b6b" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   iconBtn: { padding: 8, borderRadius: 20, minWidth: 40, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 16, fontWeight: "700", color: "#e6f7ff" },

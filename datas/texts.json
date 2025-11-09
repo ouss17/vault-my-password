@@ -90,6 +90,7 @@
   "actions.save": { "en": "Save", "fr": "Enregistrer", "es": "Guardar" },
   "actions.edit": { "en": "Edit", "fr": "Modifier", "es": "Editar" },
   "actions.validate": { "en": "Validate", "fr": "Valider", "es": "Validar" },
+  "actions.close": { "en": "Close", "fr": "Fermer", "es": "Cerrar" },
 
   "alert.error.title": { "en": "Error", "fr": "Erreur", "es": "Error" },
 
@@ -100,6 +101,9 @@
 
   "accessibility.deleteCategory": { "en": "Delete category", "fr": "Supprimer la catégorie", "es": "Eliminar la categoría" },
   "accessibility.revealPassword": { "en": "Reveal password", "fr": "Révéler le mot de passe", "es": "Revelar contraseña" },
+  "accessibility.dragCategory": { "en": "Drag category", "fr": "Déplacer la catégorie", "es": "Arrastrar categoría" },
+  "accessibility.openPasswordDetail": { "en": "Open details", "fr": "Ouvrir le détail", "es": "Abrir detalle" },
+  "accessibility.editCategory": { "en": "Edit category", "fr": "Modifier la catégorie", "es": "Editar categoría" },
 
   "password.hidden": { "en": "••••••••", "fr": "••••••••", "es": "••••••••" },
 
@@ -270,5 +274,12 @@
     "fr": "Impossible de supprimer le mot de passe.",
     "es": "No se pudo eliminar la contraseña."
   },
-  "accessibility.deletePassword": { "en": "Delete password", "fr": "Supprimer le mot de passe", "es": "Eliminar la contraseña" }
+  "accessibility.deletePassword": { "en": "Delete password", "fr": "Supprimer le mot de passe", "es": "Eliminar la contraseña" },
+
+  "category.personal": { "en": "Personal", "fr": "Personnel", "es": "Personal" },
+  "category.work": { "en": "Work", "fr": "Travail", "es": "Trabajo" },
+  "category.email": { "en": "Email", "fr": "Email", "es": "Correo" },
+  "category.finance": { "en": "Finance", "fr": "Finance", "es": "Finanzas" },
+  "category.social": { "en": "Social", "fr": "Réseaux sociaux", "es": "Social" },
+  "category.misc": { "en": "Misc", "fr": "Divers", "es": "Varios" }
 }
