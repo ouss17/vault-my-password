@@ -45,7 +45,6 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   const inactivityRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
 
-  // track biometric / auth in progress
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const isAuthenticatingRef = useRef<boolean>(false);
   useEffect(() => {
@@ -78,12 +77,11 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   
   const lastActivityRef = useRef<number | null>(null);
  
-   // Delay locking when app goes to background (15s). Cleared if app returns to foreground.
    const backgroundLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
    const appStateRef = useRef<AppStateStatus>(AppState.currentState);
    const scheduleLockRef = useRef<typeof scheduleLock | null>(null);
    const clearInactivityRef = useRef<typeof clearInactivity | null>(null);
-   const backgroundAtRef = useRef<number | null>(null); // timestamp when app went background
+   const backgroundAtRef = useRef<number | null>(null);
    const BG_LOCK_DELAY_MS = 30000; // 30s
 
   const clearInactivity = useCallback(() => {
@@ -92,7 +90,6 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       inactivityRef.current = null;
     }
   }, []);
-  // keep ref updated so the single AppState listener can call them
   useEffect(() => {
     clearInactivityRef.current = clearInactivity;
   }, [clearInactivity]);
@@ -117,19 +114,14 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     scheduleLockRef.current = scheduleLock;
   }, [scheduleLock]);
 
-  // Ensure inactivity-based lock is scheduled according to user setting.
-  // Re-run when lock timeout or available auth methods change.
   useEffect(() => {
-    // if app is currently unlocked and not authenticating, ensure we have a lastActivity and schedule lock
     if (!locked && !isAuthenticatingRef.current) {
       if (lastActivityRef.current == null) lastActivityRef.current = Date.now();
-      // call the current scheduleLock directly
       scheduleLock();
     }
   }, [
     scheduleLock,
     locked,
-    // react to user-configurable timeout or auth method changes
     (settingsRef.current?.lockTimeoutMinutes ?? 0),
     (settingsRef.current?.fingerprintAuthEnabled ?? false),
     (settingsRef.current?.questionAuthEnabled ?? false),
@@ -320,16 +312,12 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     lockedRef.current = locked;
   }, [locked]);
 
-  
-  // single installation of AppState listener (stable). Use refs inside to avoid re-registering.
   useEffect(() => {
     const onAppStateChange = (next: AppStateStatus) => {
       console.debug("[UnlockGate] app state change ->", next);
       appStateRef.current = next;
       if (next === "background" || next === "inactive") {
-        // don't lock immediately: schedule a delayed lock (15s)
         if (isAuthenticatingRef.current) {
-          // if we're authenticating, keep current behaviour (don't schedule)
           return;
         }
 
@@ -339,16 +327,14 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
           backgroundLockRef.current = null;
         }
 
-        console.debug("[UnlockGate] app -> background, recording timestamp and attempting background scheduling:", {
-          suspended: isLockSuspended(),
-          fingerprint: settingsRef.current.fingerprintAuthEnabled,
-          question: settingsRef.current.questionAuthEnabled,
-        });
+        const hasAuthMethod =
+          Boolean(settingsRef.current?.fingerprintAuthEnabled) ||
+          Boolean(settingsRef.current?.questionAuthEnabled);
 
-        // record the time we entered background — will be used when app becomes active again
-        backgroundAtRef.current = Date.now();
-        // optional: try to schedule a background timer (may not fire reliably on Android)
-        if (!isLockSuspended()) {
+        console.debug("[UnlockGate] app -> background, hasAuthMethod:", hasAuthMethod, "suspended:", isLockSuspended());
+
+        if (hasAuthMethod && !isLockSuspended()) {
+          backgroundAtRef.current = Date.now();
           backgroundLockRef.current = setTimeout(() => {
             console.debug("[UnlockGate] background timer fired (best-effort) — appStateRef:", appStateRef.current);
             if (mountedRef.current && appStateRef.current !== "active") {
@@ -356,62 +342,61 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
             }
             backgroundLockRef.current = null;
           }, BG_LOCK_DELAY_MS);
+        } else {
+          backgroundAtRef.current = null;
         }
+
         clearInactivityRef.current?.();
       } else if (next === "active") {
-        // app returned to foreground -> cancel pending background lock
         if (backgroundLockRef.current) {
           clearTimeout(backgroundLockRef.current);
           backgroundLockRef.current = null;
           console.debug("[UnlockGate] canceled pending background lock because app active again");
         }
 
-        // If we had gone to background, check elapsed time and lock if needed.
         if (backgroundAtRef.current) {
           const elapsed = Date.now() - backgroundAtRef.current;
           console.debug("[UnlockGate] returned to active — elapsed since background:", elapsed);
-          if (!isLockSuspended() && elapsed >= BG_LOCK_DELAY_MS) {
+
+          const hasAuthMethod =
+            Boolean(settingsRef.current?.fingerprintAuthEnabled) ||
+            Boolean(settingsRef.current?.questionAuthEnabled);
+
+          if (hasAuthMethod && !isLockSuspended() && elapsed >= BG_LOCK_DELAY_MS) {
             console.debug("[UnlockGate] elapsed >= delay -> locking now");
             setLocked(true);
-            // ensure snapshot + UI update happen
             lastActivityRef.current = null;
             backgroundAtRef.current = null;
-            return; // early return: user must unlock
+            return; 
           }
-          // else: reopened quickly, cancel background stamp
           backgroundAtRef.current = null;
         }
 
-         if (!isAuthenticatingRef.current) {
-           lastActivityRef.current = Date.now();
-           // use ref to call scheduleLock safely
-           scheduleLockRef.current?.();
-         }
-       }
-     };
- 
-     const subscription = AppState.addEventListener("change", onAppStateChange);
-     return () => {
-       // cleanup any pending background lock on unmount
-       if (backgroundLockRef.current) {
-         clearTimeout(backgroundLockRef.current);
-         backgroundLockRef.current = null;
-       }
+        if (!isAuthenticatingRef.current) {
+          lastActivityRef.current = Date.now();
+          scheduleLockRef.current?.();
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => {
+      if (backgroundLockRef.current) {
+        clearTimeout(backgroundLockRef.current);
+        backgroundLockRef.current = null;
+      }
       backgroundAtRef.current = null;
-       subscription.remove();
-     };
-   }, []);
+      subscription.remove();
+    };
+  }, []);
  
   return (
     <View style={styles.blocker}>
-      {/* capture les débuts d'interaction (taps/gestures) sans bloquer les enfants,
-          afin de considérer cela comme activité et repousser le verrouillage */}
       <View
         ref={rootRef}
         collapsable={false}
         style={{ flex: 1 }}
         onStartShouldSetResponderCapture={() => {
-          // appelé pour chaque début d'interaction : on marque activité et on ne prend pas le responder
           try {
             onUserActivity();
           } catch {}
@@ -458,7 +443,6 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
              )}
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-              {/* fingerprint / question buttons */}
               {settings.fingerprintAuthEnabled ? (
                 <Pressable
                   style={[styles.btn, isAuthenticating ? { opacity: 0.6 } : null]}

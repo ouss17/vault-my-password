@@ -1,4 +1,5 @@
 import { Category, upsertCategory } from "@/redux/slices/categoriesSlice";
+import { upsertTag } from "@/redux/slices/tagsSlice";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import { nanoid } from "@reduxjs/toolkit";
@@ -32,9 +33,12 @@ const AddPasswordModal = ({
   const t = useT();
   const dispatch = useDispatch<AppDispatch>();
   const categories = useSelector((s: RootState) => s.categories.items);
+  const tags = useSelector((s: RootState) => s.tags.items);
 
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
+  const [lastPickedSuggestion, setLastPickedSuggestion] = useState<string | null>(null);
+  const [showUsernameSuggestions, setShowUsernameSuggestions] = useState(true);
   const [website, setWebsite] = useState("");
   const [mdp, setMdp] = useState("");
   const [notes, setNotes] = useState("");
@@ -42,6 +46,9 @@ const AddPasswordModal = ({
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [addingTag, setAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
 
   const isEdit = !!initialItem;
 
@@ -53,6 +60,9 @@ const AddPasswordModal = ({
       setMdp("");
       setNotes(initialItem.notes ?? "");
       setCategoryId(initialItem.categoryId ?? undefined);
+      setSelectedTagIds(initialItem.tags ?? []);
+      setNewTagName("");
+      setAddingTag(false);
     } else {
       
       setName("");
@@ -63,6 +73,9 @@ const AddPasswordModal = ({
       setCategoryId(undefined);
       setNewCategoryName("");
       setAddingCategory(false);
+      setSelectedTagIds([]);
+      setNewTagName("");
+      setAddingTag(false);
     }
   }, [initialItem, visible]);
 
@@ -80,6 +93,7 @@ const AddPasswordModal = ({
         website: website.trim() || undefined,
         notes: notes.trim() || undefined,
         categoryId,
+        tags: selectedTagIds.length ? selectedTagIds : undefined,
       };
       
       if (mdp) changes.mdp = mdp;
@@ -94,6 +108,7 @@ const AddPasswordModal = ({
             mdp,
             categoryId,
             notes: notes.trim() || undefined,
+            tags: selectedTagIds.length ? selectedTagIds : undefined,
           } as any,
           key
         )
@@ -112,6 +127,9 @@ const AddPasswordModal = ({
     setCategoryId(undefined);
     setNewCategoryName("");
     setAddingCategory(false);
+    setSelectedTagIds([]);
+    setNewTagName("");
+    setAddingTag(false);
     onClose();
   };
 
@@ -145,6 +163,42 @@ const AddPasswordModal = ({
     setCategoryId(id);
     setNewCategoryName("");
     setAddingCategory(false);
+  };
+  const handleAddTag = () => {
+    const nm = newTagName.trim();
+    if (!nm) {
+      Alert.alert(t("alert.error.title"), t("validation.tagNameRequired") ?? "Tag name required");
+      return;
+    }
+    if (!categoryId) {
+      Alert.alert(t("alert.error.title"), t("validation.selectCategoryFirst") ?? "Select a category first");
+      return;
+    }
+    if (nm.length > 20) {
+      Alert.alert(t("alert.error.title"), t("validation.categoryNameTooLong") ?? "Tag name too long (max 20)");
+      return;
+    }
+    const exists = tags.find((tg: any) => tg.name.toLowerCase() === nm.toLowerCase() && (tg.categoryId ?? "") === categoryId);
+    if (exists) {
+      setSelectedTagIds([exists.id]);
+      setNewTagName("");
+      setAddingTag(false);
+      return;
+    }
+    const id = nanoid();
+    const now = Date.now();
+    dispatch(
+      upsertTag({
+        id,
+        name: nm,
+        categoryId,
+        createdAt: now,
+        updatedAt: now,
+      } as any)
+    );
+    setSelectedTagIds([id]);
+    setNewTagName("");
+    setAddingTag(false);
   };
 
   
@@ -224,8 +278,17 @@ const AddPasswordModal = ({
   const usernameSuggestions = useMemo(() => {
     const q = (username ?? "").toString().trim().toLowerCase();
     if (!q) return [];
-    return allUsernames.filter((u) => u.toLowerCase().includes(q) && u !== username).slice(0, 6);
-  }, [allUsernames, username]);
+    return allUsernames
+      .filter((u) => u.toLowerCase().includes(q) && u !== username && u !== lastPickedSuggestion)
+      .slice(0, 6);
+  }, [allUsernames, username, lastPickedSuggestion]);
+  
+  useEffect(() => {
+    if (lastPickedSuggestion && username !== lastPickedSuggestion) {
+      setLastPickedSuggestion(null);
+    }
+    setShowUsernameSuggestions(true);
+  }, [username, lastPickedSuggestion]);
  
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -264,7 +327,10 @@ const AddPasswordModal = ({
                 ref={usernameRef}
                 placeholder={t("placeholder.exampleUsername")}
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(v) => {
+                  setUsername(v);
+                  setShowUsernameSuggestions(true);
+                }}
                 style={styles.input}
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="none"
@@ -273,28 +339,33 @@ const AddPasswordModal = ({
                 onSubmitEditing={() => validateAndFocus(username, websiteRef, false, t("field.username"))}
               />
               {domainSuggestions.length > 0 ? (
+                showUsernameSuggestions && (
                 <View style={styles.suggestions}>
-                  {domainSuggestions.map((dom) => {
-                    const local = username.split("@")[0] ?? "";
-                    return (
-                      <TouchableOpacity
-                        key={`d:${dom}`}
-                        style={styles.suggestionItem}
-                        onPress={() => {
-                          setUsername(`${local}@${dom}`);
-                          if (websiteRef.current) websiteRef.current.focus();
-                        }}
-                      >
-                        <Text style={styles.suggestionText}>
-                          {local}@<Text style={{ opacity: 0.9 }}>{dom}</Text>
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              ) : null}
+                   {domainSuggestions.map((dom) => {
+                     const local = username.split("@")[0] ?? "";
+                     return (
+                       <TouchableOpacity
+                         key={`d:${dom}`}
+                         style={styles.suggestionItem}
+                         onPress={() => {
+                           setUsername(`${local}@${dom}`);
+                           setShowUsernameSuggestions(false);
+                           setLastPickedSuggestion(`${local}@${dom}`);
+                           if (usernameRef.current) usernameRef.current.blur();
+                           if (websiteRef.current) websiteRef.current.focus();
+                         }}
+                       >
+                         <Text style={styles.suggestionText}>
+                           {local}@<Text style={{ opacity: 0.9 }}>{dom}</Text>
+                         </Text>
+                       </TouchableOpacity>
+                     );
+                   })}
+                 </View>
+                )
+               ) : null}
 
-              {usernameSuggestions.length > 0 ? (
+              {showUsernameSuggestions && usernameSuggestions.length > 0 ? (
                 <View style={styles.suggestions}>
                   {usernameSuggestions.map((sug) => (
                     <TouchableOpacity
@@ -302,6 +373,9 @@ const AddPasswordModal = ({
                       style={styles.suggestionItem}
                       onPress={() => {
                         setUsername(sug);
+                        setLastPickedSuggestion(sug); // hide the picked suggestion
+                        setShowUsernameSuggestions(false);
+                        if (usernameRef.current) usernameRef.current.blur();
                         if (websiteRef.current) websiteRef.current.focus();
                       }}
                     >
@@ -388,24 +462,50 @@ const AddPasswordModal = ({
               ) : null}
             </View>
 
+            {/* Tag selector (shows tags for selected category) */}
+            <Text style={[styles.label, { marginTop: 8 }]}>Tags</Text>
+            <View style={styles.categories}>
+              {!categoryId ? (
+                <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{t("tags.selectCategoryFirst") ?? "Select a category to manage tags"}</Text>
+              ) : null}
+              {tags
+                .filter((tg: any) => (tg.categoryId ?? "uncategorized") === (categoryId ?? "uncategorized"))
+                .map((tg: any) => (
+                  <TouchableOpacity
+                    key={tg.id}
+                    onPress={() =>
+                      setSelectedTagIds((s) => (s.includes(tg.id) ? s.filter((x) => x !== tg.id) : [...s, tg.id]))
+                    }
+                    style={[styles.catChip, selectedTagIds.includes(tg.id) && styles.catChipActive]}
+                  >
+                    <Text style={styles.catChipText}>{tg.name}</Text>
+                  </TouchableOpacity>
+                ))}
 
-            {addingCategory && (
+              {!addingTag ? (
+                <TouchableOpacity onPress={() => setAddingTag(true)} style={[styles.catChip, styles.addCatChip]}>
+                  <Text style={[styles.catChipText, { color: colors.accent }]}>{t("tags.add") ?? "Add tag"}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {addingTag && (
               <View style={styles.addCategoryRow}>
                 <TextInput
-                  placeholder={t("category.new.placeholder")}
-                  value={newCategoryName}
-                  onChangeText={setNewCategoryName}
+                  placeholder={t("tags.new.placeholder") ?? "New tag"}
+                  value={newTagName}
+                  onChangeText={setNewTagName}
                   style={[styles.input, styles.newCategoryInput]}
                   placeholderTextColor={colors.textSecondary}
                   maxLength={20}
                 />
-                <Text style={[styles.charCount, newCategoryName.length >= 20 ? styles.charCountWarning : null]}>
-                  {newCategoryName.length}/20
+                <Text style={[styles.charCount, newTagName.length >= 20 ? styles.charCountWarning : null]}>
+                  {newTagName.length}/20
                 </Text>
-                <TouchableOpacity onPress={handleAddCategory} style={styles.addCategoryBtn}>
+                <TouchableOpacity onPress={handleAddTag} style={styles.addCategoryBtn}>
                   <Text style={styles.addCategoryBtnText}>{t("category.addButton")}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { setAddingCategory(false); setNewCategoryName(""); }} style={styles.addCategoryCancel}>
+                <TouchableOpacity onPress={() => { setAddingTag(false); setNewTagName(""); }} style={styles.addCategoryCancel}>
                   <Text style={{ color: colors.textSecondary }}>{t("common.cancel")}</Text>
                 </TouchableOpacity>
               </View>

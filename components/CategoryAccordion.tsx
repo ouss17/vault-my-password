@@ -1,5 +1,7 @@
 import { addCategory, deleteCategoryAndPasswords, upsertCategory } from "@/redux/slices/categoriesSlice";
 import { upsertPassword } from "@/redux/slices/pwdSlice";
+import { Tag } from "@/redux/slices/tagsSlice";
+import type { RootState } from "@/redux/store";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
@@ -15,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import PasswordRow from "./PasswordRow";
 
 type PasswordItem = {
@@ -23,6 +25,7 @@ type PasswordItem = {
   name: string;
   username?: string; 
   isOld?: boolean;
+  tags?: string[]; 
 };
 
 const CategoryAccordion = ({
@@ -38,13 +41,20 @@ const CategoryAccordion = ({
 }) => {
   const dispatch = useDispatch();
   const t = useT();
+  const tagsState = useSelector((s: RootState) => (s as any).tags);
+  const tags = ((tagsState?.items ?? []) as Tag[]).filter((x) => (x.categoryId ?? "uncategorized") === categoryId);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false); 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState<string>(categoryName);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
  
   const progress = useRef(new Animated.Value(0)).current; 
   const rotate = useRef(new Animated.Value(0)).current;
+
+  const displayedItems = selectedTags.length
+    ? items.filter((it) => (it.tags ?? []).some((tg) => selectedTags.includes(tg)))
+    : items;
 
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -264,16 +274,34 @@ const CategoryAccordion = ({
 
       {mounted && (
         <Animated.View style={[styles.content, contentStyle]}>
-          {items.map((it) => (
-            <PasswordRow
-              key={it.id}
-              id={it.id}
-              name={it.name}
-              username={it.username}
-              isOld={it.isOld}
-              onReveal={() => onReveal(it.id)}
-            />
-          ))}
+          {/* tags row */}
+          <View style={styles.tagsRow}>
+            <TouchableOpacity onPress={() => setSelectedTags([])} style={[styles.tagChip, selectedTags.length === 0 && styles.tagChipActive]}>
+              <Text style={styles.tagText}>{t("tags.all") ?? "All"}</Text>
+            </TouchableOpacity>
+            {tags.map((tag: Tag) => (
+              <TouchableOpacity
+                key={tag.id}
+                onPress={() =>
+                  setSelectedTags((s) => (s.includes(tag.id) ? s.filter((x) => x !== tag.id) : [...s, tag.id]))
+                }
+                style={[styles.tagChip, selectedTags.includes(tag.id) && styles.tagChipActive]}
+              >
+                <Text style={styles.tagText}>{tag.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {displayedItems.map((it) => (
+             <PasswordRow
+               key={it.id}
+               id={it.id}
+               name={it.name}
+               username={it.username}
+               isOld={it.isOld}
+               onReveal={() => onReveal(it.id)}
+             />
+           ))}
         </Animated.View>
       )}
     </View>
@@ -321,6 +349,28 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   iconColor: { color: "#9ec5ea" as any },
+  tagsRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  tagChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.03)",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagChipActive: {
+    backgroundColor: "rgba(30,144,255,0.12)",
+    borderColor: "rgba(30,144,255,0.25)",
+  },
+  tagText: { color: "#e6f7ff", fontSize: 13, fontWeight: "600" },
 });
 
 export default CategoryAccordion;

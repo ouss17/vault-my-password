@@ -281,5 +281,22 @@
   "category.email": { "en": "Email", "fr": "Email", "es": "Correo" },
   "category.finance": { "en": "Finance", "fr": "Finance", "es": "Finanzas" },
   "category.social": { "en": "Social", "fr": "Réseaux sociaux", "es": "Social" },
-  "category.misc": { "en": "Misc", "fr": "Divers", "es": "Varios" }
+  "category.misc": { "en": "Misc", "fr": "Divers", "es": "Varios" },
+
+  "field.tags": { "en": "Tags", "fr": "Tags", "es": "Etiquetas" },
+  "tags.all": { "en": "All", "fr": "Tous", "es": "Todos" },
+  "tags.add": { "en": "Add tag", "fr": "Ajouter un tag", "es": "Añadir etiqueta" },
+  "tags.new.placeholder": { "en": "New tag", "fr": "Nouveau tag", "es": "Nueva etiqueta" },
+  "tags.selectCategoryFirst": {
+    "en": "Select a category to manage tags",
+    "fr": "Sélectionnez une catégorie pour gérer les tags",
+    "es": "Seleccione una categoría para gestionar etiquetas"
+  },
+  "validation.tagNameRequired": { "en": "Tag name is required.", "fr": "Le nom du tag est requis.", "es": "El nombre de la etiqueta es obligatorio." },
+  "validation.selectCategoryFirst": { "en": "Please select a category first.", "fr": "Veuillez d'abord sélectionner une catégorie.", "es": "Por favor seleccione una categoría primero." },
+  "validation.categoryNameTooLong": {
+    "en": "Name too long (max {max}).",
+    "fr": "Nom trop long (max {max}).",
+    "es": "Nombre demasiado largo (max {max})."
+  }
 }

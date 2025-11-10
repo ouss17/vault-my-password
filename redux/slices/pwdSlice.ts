@@ -13,6 +13,7 @@ export interface PasswordItem {
   favorite?: boolean;
   createdAt: number;
   updatedAt?: number;
+  tags?: string[]; // NEW: tag ids
 }
 
 interface PwdState {
@@ -42,6 +43,7 @@ const pwdSlice = createSlice({
         favorite: payload.favorite ?? false,
         createdAt: now,
         updatedAt: now,
+        tags: (payload as any).tags ?? [],
       };
       state.items.push(item);
     },
@@ -107,7 +109,7 @@ export const decryptText = (cipherText: string, key: string) => {
 };
 
 export const addPasswordEncrypted =
-  (payload: Omit<Partial<PasswordItem>, "id" | "createdAt"> & { mdp: string; name?: string }, encryptionKey: string) =>
+  (payload: Omit<Partial<PasswordItem>, "id" | "createdAt"> & { mdp: string; name?: string; tags?: string[] }, encryptionKey: string) =>
   async (dispatch: AppDispatch) => {
     const encrypted = encryptText(payload.mdp, encryptionKey);
     const toDispatch = { ...payload, mdp: encrypted } as any;
@@ -115,7 +117,7 @@ export const addPasswordEncrypted =
   };
 
 export const updatePasswordEncrypted =
-  (id: string, changes: Partial<Omit<PasswordItem, "id" | "createdAt">> & { mdp?: string }, encryptionKey: string) =>
+  (id: string, changes: Partial<Omit<PasswordItem, "id" | "createdAt">> & { mdp?: string; tags?: string[] }, encryptionKey: string) =>
   async (dispatch: AppDispatch) => {
     const patched = { ...changes } as any;
     if (changes.mdp != null) {
