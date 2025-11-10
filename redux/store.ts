@@ -4,6 +4,7 @@ import { persistReducer, persistStore } from 'redux-persist';
 import categoriesReducer from './slices/categoriesSlice';
 import pwdReducer from './slices/pwdSlice';
 import settingsReducer from './slices/settingsSlice';
+import tagsReducer from './slices/tagsSlice';
 /**
  * Combine tous les reducers de l'application.
  */
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
   settings: settingsReducer,
   passwords: pwdReducer,
   categories: categoriesReducer, 
+  tags: tagsReducer,
 });
 
 
@@ -20,7 +22,7 @@ const rootReducer = combineReducers({
 const rootPersistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['settings', 'passwords', 'categories'],
+  whitelist: ['settings', 'passwords', 'categories', 'tags'],
 };
 
 

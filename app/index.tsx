@@ -12,7 +12,7 @@ import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -34,6 +34,8 @@ const Index = () => {
   const passwords = useSelector((s: RootState) => s.passwords.items);
   const settings = useSelector((s: RootState) => s.settings);
   const dispatch = useDispatch<AppDispatch>();
+  const [sortOrder, setSortOrder] = useState<"az" | "za" | null>(null);
+  const [categorySort, setCategorySort] = useState<"az" | "za" | null>(null);
   const [query, setQuery] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
@@ -55,6 +57,19 @@ const Index = () => {
   React.useEffect(() => {
     dispatch(initializeFirstRun());
   }, [dispatch]);
+ 
+  const handleCategorySortPress = () => {
+    Alert.alert(
+      t("sort.categories.title") ?? "Sort categories",
+      undefined,
+      [
+        { text: "A → Z", onPress: () => setCategorySort("az") },
+        { text: "Z → A", onPress: () => setCategorySort("za") },
+        { text: t("common.cancel"), style: "cancel" },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const data = useMemo(() => {
     
@@ -89,8 +104,34 @@ const Index = () => {
     if (uncats.length) {
       arr.push({ id: "uncategorized", name: "Sans catégorie", items: uncats });
     }
-    return arr;
-  }, [categories, grouped, passwords, settings]);
+
+    // sort categories themselves if requested
+    if (categorySort) {
+      const locale = (settings?.language as string) ?? "fr";
+      arr.sort((a: any, b: any) => {
+        const aName = (a.name ?? "").toString();
+        const bName = (b.name ?? "").toString();
+        return categorySort === "az"
+          ? aName.localeCompare(bName, locale, { sensitivity: "base" })
+          : bName.localeCompare(aName, locale, { sensitivity: "base" });
+      });
+    }
+
+    // apply sorting to items within each category if requested
+    if (sortOrder) {
+      const locale = (settings?.language as string) ?? "fr";
+      for (const cat of arr) {
+        cat.items = [...(cat.items ?? [])].sort((a: any, b: any) => {
+          const aName = (a.name ?? "").toString();
+          const bName = (b.name ?? "").toString();
+          return sortOrder === "az"
+            ? aName.localeCompare(bName, locale, { sensitivity: "base" })
+            : bName.localeCompare(aName, locale, { sensitivity: "base" });
+        });
+      }
+    }
+     return arr;
+  }, [categories, grouped, passwords, settings, sortOrder, categorySort]);
 
   
   const filteredData = useMemo(() => {
@@ -127,7 +168,10 @@ const Index = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Header onOpenSettings={() => router.push("/settings")} />
+      <Header
+        onOpenSettings={() => router.push("/settings")}
+        onOpenCategorySort={handleCategorySortPress}
+      />
       <View style={styles.content}>
         
         <View style={styles.searchRow}>

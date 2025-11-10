@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { removePasswordsByCategory } from "./pwdSlice";
 
 
-export type Category = { id: string; name: string; createdAt?: number; updatedAt?: number };
+export type Category = { id: string; name: string; createdAt?: number; updatedAt?: number; order?: number };
 
 const initialState: { items: Category[] } = {
   items: [],
@@ -33,7 +33,8 @@ const categoriesSlice = createSlice({
   initialState,
   reducers: {
     setCategories(state, action: PayloadAction<Category[]>) {
-      state.items = action.payload;
+      // accept and store explicit order from payload
+      state.items = action.payload.map((c, i) => ({ ...c, order: c.order ?? i }));
     },
     addCategory(state, action: PayloadAction<Category>) {
       state.items.push(action.payload);

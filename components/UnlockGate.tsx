@@ -45,9 +45,15 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
   const inactivityRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
 
-  const rootRef = useRef<View | null>(null); 
-  const [snapshotUri, setSnapshotUri] = useState<string | null>(null);
-  const takingSnapshotRef = useRef(false);
+  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
+  const isAuthenticatingRef = useRef<boolean>(false);
+  useEffect(() => {
+    isAuthenticatingRef.current = isAuthenticating;
+  }, [isAuthenticating]);
+
+   const rootRef = useRef<View | null>(null); 
+   const [snapshotUri, setSnapshotUri] = useState<string | null>(null);
+   const takingSnapshotRef = useRef(false);
 
   const takeSnapshot = useCallback(async () => {
     if (!rootRef.current || takingSnapshotRef.current) return;
@@ -70,11 +76,13 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
 
   
   const lastActivityRef = useRef<number | null>(null);
-
-  
-  const isAuthenticatingRef = useRef<boolean>(false);
-  
-  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
+ 
+   const backgroundLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+   const scheduleLockRef = useRef<typeof scheduleLock | null>(null);
+   const clearInactivityRef = useRef<typeof clearInactivity | null>(null);
+   const backgroundAtRef = useRef<number | null>(null);
+   const BG_LOCK_DELAY_MS = 30000; // 30s
 
   const clearInactivity = useCallback(() => {
     if (inactivityRef.current) {
@@ -82,8 +90,10 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       inactivityRef.current = null;
     }
   }, []);
+  useEffect(() => {
+    clearInactivityRef.current = clearInactivity;
+  }, [clearInactivity]);
 
-  
   const scheduleLock = useCallback(() => {
     clearInactivity();
     
@@ -100,6 +110,22 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
       if (mountedRef.current && !isLockSuspended()) setLocked(true);
     }, remaining) as unknown as number;
   }, [lockTimeout, clearInactivity]);
+  useEffect(() => {
+    scheduleLockRef.current = scheduleLock;
+  }, [scheduleLock]);
+
+  useEffect(() => {
+    if (!locked && !isAuthenticatingRef.current) {
+      if (lastActivityRef.current == null) lastActivityRef.current = Date.now();
+      scheduleLock();
+    }
+  }, [
+    scheduleLock,
+    locked,
+    (settingsRef.current?.lockTimeoutMinutes ?? 0),
+    (settingsRef.current?.fingerprintAuthEnabled ?? false),
+    (settingsRef.current?.questionAuthEnabled ?? false),
+  ]);
 
   const tryBiometric = useCallback(async () => {
     
@@ -286,41 +312,97 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
     lockedRef.current = locked;
   }, [locked]);
 
-  
   useEffect(() => {
     const onAppStateChange = (next: AppStateStatus) => {
+      console.debug("[UnlockGate] app state change ->", next);
+      appStateRef.current = next;
       if (next === "background" || next === "inactive") {
-        
         if (isAuthenticatingRef.current) {
-          
-        } else {
-          
-          if (!isLockSuspended() && (settingsRef.current.fingerprintAuthEnabled || settingsRef.current.questionAuthEnabled)) {
-            setLocked(true);
-          }
-          clearInactivity();
+          return;
         }
+
+        // clear any previous background timer
+        if (backgroundLockRef.current) {
+          clearTimeout(backgroundLockRef.current);
+          backgroundLockRef.current = null;
+        }
+
+        const hasAuthMethod =
+          Boolean(settingsRef.current?.fingerprintAuthEnabled) ||
+          Boolean(settingsRef.current?.questionAuthEnabled);
+
+        console.debug("[UnlockGate] app -> background, hasAuthMethod:", hasAuthMethod, "suspended:", isLockSuspended());
+
+        if (hasAuthMethod && !isLockSuspended()) {
+          backgroundAtRef.current = Date.now();
+          backgroundLockRef.current = setTimeout(() => {
+            console.debug("[UnlockGate] background timer fired (best-effort) — appStateRef:", appStateRef.current);
+            if (mountedRef.current && appStateRef.current !== "active") {
+              setLocked(true);
+            }
+            backgroundLockRef.current = null;
+          }, BG_LOCK_DELAY_MS);
+        } else {
+          backgroundAtRef.current = null;
+        }
+
+        clearInactivityRef.current?.();
       } else if (next === "active") {
-        
+        if (backgroundLockRef.current) {
+          clearTimeout(backgroundLockRef.current);
+          backgroundLockRef.current = null;
+          console.debug("[UnlockGate] canceled pending background lock because app active again");
+        }
+
+        if (backgroundAtRef.current) {
+          const elapsed = Date.now() - backgroundAtRef.current;
+          console.debug("[UnlockGate] returned to active — elapsed since background:", elapsed);
+
+          const hasAuthMethod =
+            Boolean(settingsRef.current?.fingerprintAuthEnabled) ||
+            Boolean(settingsRef.current?.questionAuthEnabled);
+
+          if (hasAuthMethod && !isLockSuspended() && elapsed >= BG_LOCK_DELAY_MS) {
+            console.debug("[UnlockGate] elapsed >= delay -> locking now");
+            setLocked(true);
+            lastActivityRef.current = null;
+            backgroundAtRef.current = null;
+            return; 
+          }
+          backgroundAtRef.current = null;
+        }
+
         if (!isAuthenticatingRef.current) {
           lastActivityRef.current = Date.now();
-          if (!locked) scheduleLock();
+          scheduleLockRef.current?.();
         }
       }
     };
 
-    
     const subscription = AppState.addEventListener("change", onAppStateChange);
     return () => {
-      
+      if (backgroundLockRef.current) {
+        clearTimeout(backgroundLockRef.current);
+        backgroundLockRef.current = null;
+      }
+      backgroundAtRef.current = null;
       subscription.remove();
     };
-    
-  }, [locked, scheduleLock, clearInactivity]);
-
+  }, []);
+ 
   return (
     <View style={styles.blocker}>
-      <View ref={rootRef} collapsable={false} style={{ flex: 1 }}>
+      <View
+        ref={rootRef}
+        collapsable={false}
+        style={{ flex: 1 }}
+        onStartShouldSetResponderCapture={() => {
+          try {
+            onUserActivity();
+          } catch {}
+          return false;
+        }}
+      >
         {children}
       </View>
 
@@ -361,7 +443,6 @@ export default function UnlockGate({ children }: { children: React.ReactNode }) 
              )}
 
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-              {/* fingerprint / question buttons */}
               {settings.fingerprintAuthEnabled ? (
                 <Pressable
                   style={[styles.btn, isAuthenticating ? { opacity: 0.6 } : null]}

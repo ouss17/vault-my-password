@@ -1,18 +1,23 @@
-import { addCategory, deleteCategoryAndPasswords } from "@/redux/slices/categoriesSlice";
+import { addCategory, deleteCategoryAndPasswords, upsertCategory } from "@/redux/slices/categoriesSlice";
 import { upsertPassword } from "@/redux/slices/pwdSlice";
+import { Tag } from "@/redux/slices/tagsSlice";
+import type { RootState } from "@/redux/store";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Keyboard,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import PasswordRow from "./PasswordRow";
 
 type PasswordItem = {
@@ -20,6 +25,7 @@ type PasswordItem = {
   name: string;
   username?: string; 
   isOld?: boolean;
+  tags?: string[]; 
 };
 
 const CategoryAccordion = ({
@@ -35,11 +41,20 @@ const CategoryAccordion = ({
 }) => {
   const dispatch = useDispatch();
   const t = useT();
+  const tagsState = useSelector((s: RootState) => (s as any).tags);
+  const tags = ((tagsState?.items ?? []) as Tag[]).filter((x) => (x.categoryId ?? "uncategorized") === categoryId);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false); 
-
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState<string>(categoryName);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+ 
   const progress = useRef(new Animated.Value(0)).current; 
   const rotate = useRef(new Animated.Value(0)).current;
+
+  const displayedItems = selectedTags.length
+    ? items.filter((it) => (it.tags ?? []).some((tg) => selectedTags.includes(tg)))
+    : items;
 
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -154,6 +169,32 @@ const CategoryAccordion = ({
     );
   };
 
+  const startEdit = () => {
+    setEditName(categoryName);
+    setEditing(true);
+    setTimeout(() => Keyboard.dismiss(), 50);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditName(categoryName);
+  };
+
+  const saveEdit = () => {
+    const name = (editName ?? "").toString().trim();
+    if (!name) {
+      Alert.alert(t("alert.error.title"), t("validation.requiredFields"));
+      return;
+    }
+    try {
+      dispatch(upsertCategory({ id: categoryId, name, updatedAt: Date.now() } as any));
+      setEditing(false);
+    } catch (err) {
+      console.error("Update category error:", err);
+      Alert.alert(t("alert.error.title"), t("alerts.updateCategory.errorMessage") ?? t("alert.error.generic"));
+    }
+  };
+
   return (
     <View style={styles.wrapper}>
       <Pressable
@@ -162,42 +203,105 @@ const CategoryAccordion = ({
         android_ripple={{ color: "rgba(255,255,255,0.03)" }}
       >
         <View style={styles.headerLeft}>
-          <Text style={styles.title} numberOfLines={1}>
-            {categoryName}
-          </Text>
+          {editing ? (
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+              <TextInput
+                value={editName}
+                onChangeText={setEditName}
+                style={styles.editInput}
+                placeholder={t("category.editPlaceholder") ?? ""}
+                placeholderTextColor={"#9ec5ea"}
+                numberOfLines={1}
+                maxLength={20}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={() => {
+                  saveEdit();
+                  Keyboard.dismiss();
+                }}
+              />
+              <Text style={[styles.charCount, editName.length >= 20 ? styles.charCountWarning : null]}>
+                {editName.length}/20
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.title} numberOfLines={1}>
+              {categoryName}
+            </Text>
+          )}
           <Text style={styles.count}>
             {items.length} {items.length > 1 ? t("category.count.plural") : t("category.count.singular")}
           </Text>
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable
-            onPress={onDeleteCategory}
-            style={styles.iconBtn}
-            android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
-            accessibilityLabel={`${t("accessibility.deleteCategory")} ${categoryName}`}
-          >
-            <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-          </Pressable>
+          {editing ? (
+            <>
+              <TouchableOpacity onPress={saveEdit} style={styles.iconBtn} accessibilityLabel={t("actions.save")}>
+                <Ionicons name="checkmark" size={22} color="#9ec5ea" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancelEdit} style={styles.iconBtn} accessibilityLabel={t("common.cancel")}>
+                <Ionicons name="close" size={22} color="#9ec5ea" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Pressable
+                onPress={() => startEdit()}
+                style={styles.iconBtn}
+                android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
+                accessibilityLabel={`${t("accessibility.editCategory")} ${categoryName}`}
+              >
+                <Ionicons name="pencil-outline" size={22} color="#9ec5ea" />
+              </Pressable>
+
+              <Pressable
+                onPress={onDeleteCategory}
+                style={styles.iconBtn}
+                android_ripple={{ color: "rgba(255,255,255,0.04)", radius: 20 }}
+                accessibilityLabel={`${t("accessibility.deleteCategory")} ${categoryName}`}
+              >
+                <Ionicons name="trash-outline" size={22} color="#ff6b6b" />
+              </Pressable>
+            </>
+          )}
 
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons name="chevron-down" size={20} color={styles.iconColor.color} />
+            <Ionicons name="chevron-down" size={24} color={styles.iconColor.color} />
           </Animated.View>
         </View>
       </Pressable>
 
       {mounted && (
         <Animated.View style={[styles.content, contentStyle]}>
-          {items.map((it) => (
-            <PasswordRow
-              key={it.id}
-              id={it.id}
-              name={it.name}
-              username={it.username}
-              isOld={it.isOld}
-              onReveal={() => onReveal(it.id)}
-            />
-          ))}
+          {/* tags row */}
+          <View style={styles.tagsRow}>
+            <TouchableOpacity onPress={() => setSelectedTags([])} style={[styles.tagChip, selectedTags.length === 0 && styles.tagChipActive]}>
+              <Text style={styles.tagText}>{t("tags.all") ?? "All"}</Text>
+            </TouchableOpacity>
+            {tags.map((tag: Tag) => (
+              <TouchableOpacity
+                key={tag.id}
+                onPress={() =>
+                  setSelectedTags((s) => (s.includes(tag.id) ? s.filter((x) => x !== tag.id) : [...s, tag.id]))
+                }
+                style={[styles.tagChip, selectedTags.includes(tag.id) && styles.tagChipActive]}
+              >
+                <Text style={styles.tagText}>{tag.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {displayedItems.map((it) => (
+             <PasswordRow
+               key={it.id}
+               id={it.id}
+               name={it.name}
+               username={it.username}
+               isOld={it.isOld}
+               onReveal={() => onReveal(it.id)}
+             />
+           ))}
         </Animated.View>
       )}
     </View>
@@ -223,8 +327,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   headerLeft: { maxWidth: "85%" },
+  editInput: {
+    borderWidth: 1,
+    borderColor: "rgba(158,197,234,0.12)",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    color: "#e6f7ff",
+    minWidth: 80,
+    flex: 1,
+    marginRight: 8,
+  },
+  charCount: { color: "#9ec5ea", fontSize: 12, marginLeft: 8 },
+  charCountWarning: { color: "#ff6b6b" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  iconBtn: { padding: 6, borderRadius: 20 },
+  iconBtn: { padding: 8, borderRadius: 20, minWidth: 40, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 16, fontWeight: "700", color: "#e6f7ff" },
   count: { fontSize: 12, color: "#9ec5ea", marginTop: 4 },
   content: {
@@ -232,6 +349,28 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   iconColor: { color: "#9ec5ea" as any },
+  tagsRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  tagChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.03)",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagChipActive: {
+    backgroundColor: "rgba(30,144,255,0.12)",
+    borderColor: "rgba(30,144,255,0.25)",
+  },
+  tagText: { color: "#e6f7ff", fontSize: 13, fontWeight: "600" },
 });
 
 export default CategoryAccordion;

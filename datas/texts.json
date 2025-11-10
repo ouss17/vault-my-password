@@ -2,6 +2,8 @@
   "navBar.home": { "en": "Home", "fr": "Accueil", "es": "Inicio" },
   "navBar.settings": { "en": "Settings", "fr": "Paramètres", "es": "Ajustes" },
 
+  "sort.categories.title": { "en": "Sort categories", "fr": "Trier les catégories", "es": "Ordenar categorías" },
+  
   "common.add": { "en": "Add", "fr": "Ajouter", "es": "Añadir" },
   "common.ok": { "en": "OK", "fr": "OK", "es": "OK" },
   "common.edit": { "en": "Edit", "fr": "Modifier", "es": "Editar" },
@@ -77,12 +79,18 @@
   "category.addButton": { "en": "Add", "fr": "Ajouter", "es": "Añadir" },
   "category.count.singular": { "en": "item", "fr": "élément", "es": "elemento" },
   "category.count.plural": { "en": "items", "fr": "éléments", "es": "elementos" },
+  "category.editPlaceholder": {
+    "en": "Edit category name",
+    "fr": "Modifier le nom de la catégorie",
+    "es": "Editar nombre de la categoría"
+  },
 
   "actions.cancel": { "en": "Cancel", "fr": "Annuler", "es": "Cancelar" },
   "actions.add": { "en": "Add", "fr": "Ajouter", "es": "Añadir" },
   "actions.save": { "en": "Save", "fr": "Enregistrer", "es": "Guardar" },
   "actions.edit": { "en": "Edit", "fr": "Modifier", "es": "Editar" },
   "actions.validate": { "en": "Validate", "fr": "Valider", "es": "Validar" },
+  "actions.close": { "en": "Close", "fr": "Fermer", "es": "Cerrar" },
 
   "alert.error.title": { "en": "Error", "fr": "Erreur", "es": "Error" },
 
@@ -93,6 +101,9 @@
 
   "accessibility.deleteCategory": { "en": "Delete category", "fr": "Supprimer la catégorie", "es": "Eliminar la categoría" },
   "accessibility.revealPassword": { "en": "Reveal password", "fr": "Révéler le mot de passe", "es": "Revelar contraseña" },
+  "accessibility.dragCategory": { "en": "Drag category", "fr": "Déplacer la catégorie", "es": "Arrastrar categoría" },
+  "accessibility.openPasswordDetail": { "en": "Open details", "fr": "Ouvrir le détail", "es": "Abrir detalle" },
+  "accessibility.editCategory": { "en": "Edit category", "fr": "Modifier la catégorie", "es": "Editar categoría" },
 
   "password.hidden": { "en": "••••••••", "fr": "••••••••", "es": "••••••••" },
 
@@ -250,5 +261,42 @@
   "title.copy.message": { "en": "Title copied to clipboard", "fr": "Titre copié dans le presse-papiers", "es": "Título copiado al portapapeles" },
   "title.copy.error": { "en": "Unable to copy title", "fr": "Impossible de copier le titre", "es": "No se pudo copiar el título" },
   "title.copy.empty": { "en": "No title to copy", "fr": "Aucun titre à copier", "es": "No hay título para copiar" },
-  "accessibility.copyTitle": { "en": "Copy title", "fr": "Copier le titre", "es": "Copiar título" }
+  "accessibility.copyTitle": { "en": "Copy title", "fr": "Copier le titre", "es": "Copiar título" },
+  "alerts.deletePassword.deletedTitle": { "en": "Deleted", "fr": "Supprimé", "es": "Eliminado" },
+  "alerts.deletePassword.deletedMessage": {
+    "en": "«{name}» deleted",
+    "fr": "«{name}» supprimé",
+    "es": "«{name}» eliminado"
+  },
+  "alerts.deletePassword.undo": { "en": "Undo", "fr": "Annuler", "es": "Deshacer" },
+  "alerts.deletePassword.errorMessage": {
+    "en": "Unable to delete password.",
+    "fr": "Impossible de supprimer le mot de passe.",
+    "es": "No se pudo eliminar la contraseña."
+  },
+  "accessibility.deletePassword": { "en": "Delete password", "fr": "Supprimer le mot de passe", "es": "Eliminar la contraseña" },
+
+  "category.personal": { "en": "Personal", "fr": "Personnel", "es": "Personal" },
+  "category.work": { "en": "Work", "fr": "Travail", "es": "Trabajo" },
+  "category.email": { "en": "Email", "fr": "Email", "es": "Correo" },
+  "category.finance": { "en": "Finance", "fr": "Finance", "es": "Finanzas" },
+  "category.social": { "en": "Social", "fr": "Réseaux sociaux", "es": "Social" },
+  "category.misc": { "en": "Misc", "fr": "Divers", "es": "Varios" },
+
+  "field.tags": { "en": "Tags", "fr": "Tags", "es": "Etiquetas" },
+  "tags.all": { "en": "All", "fr": "Tous", "es": "Todos" },
+  "tags.add": { "en": "Add tag", "fr": "Ajouter un tag", "es": "Añadir etiqueta" },
+  "tags.new.placeholder": { "en": "New tag", "fr": "Nouveau tag", "es": "Nueva etiqueta" },
+  "tags.selectCategoryFirst": {
+    "en": "Select a category to manage tags",
+    "fr": "Sélectionnez une catégorie pour gérer les tags",
+    "es": "Seleccione una categoría para gestionar etiquetas"
+  },
+  "validation.tagNameRequired": { "en": "Tag name is required.", "fr": "Le nom du tag est requis.", "es": "El nombre de la etiqueta es obligatorio." },
+  "validation.selectCategoryFirst": { "en": "Please select a category first.", "fr": "Veuillez d'abord sélectionner une catégorie.", "es": "Por favor seleccione una categoría primero." },
+  "validation.categoryNameTooLong": {
+    "en": "Name too long (max {max}).",
+    "fr": "Nom trop long (max {max}).",
+    "es": "Nombre demasiado largo (max {max})."
+  }
 }

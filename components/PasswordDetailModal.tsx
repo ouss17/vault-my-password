@@ -1,3 +1,4 @@
+import type { Tag } from "@/redux/slices/tagsSlice";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -38,6 +39,9 @@ const PasswordDetailModal = ({
   const item = useSelector((s: RootState) => s.passwords.items.find((p : { id: string; name: string; username: string; website: string; mdp: string; notes: string; categoryId: string | undefined; }) => p.id === passwordId) ?? null);
   const categories = useSelector((s: RootState) => s.categories.items);
   const settings = useSelector((s: RootState) => s.settings);
+  const tagsState = useSelector((s: RootState) => (s as any).tags);
+  const allTags: Tag[] = (tagsState?.items ?? []) as Tag[];
+  const itemTags = (item?.tags ?? []).map((id: string) => allTags.find((t) => t.id === id)).filter(Boolean) as Tag[];
  
    useEffect(() => {
      if (!visible || !passwordId) {
@@ -138,11 +142,9 @@ const PasswordDetailModal = ({
 
    return (
      <>
-       <Modal visible={visible} animationType="slide" transparent>
-         {/* outer TouchableWithoutFeedback closes modal when tapping outside */}
+       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
          <TouchableWithoutFeedback onPress={onClose}>
            <View style={[styles.backdrop]}>
-             {/* inner TouchableWithoutFeedback prevents closing when interacting inside the modal */}
              <TouchableWithoutFeedback onPress={() => {}}>
                <View style={styles.modal}>
                  <View style={styles.header}>
@@ -204,9 +206,22 @@ const PasswordDetailModal = ({
                    <Text style={styles.label}>{t("field.category")}</Text>
                    <Text style={styles.value}>{category?.name ?? t("category.uncategorized")}</Text>
 
+                  {itemTags.length ? (
+                    <>
+                      <Text style={styles.label}>{t("field.tags") ?? "Tags"}</Text>
+                      <View style={styles.tagsRow}>
+                        {itemTags.map((tg) => (
+                          <View key={tg.id} style={styles.tagPill}>
+                            <Text style={styles.tagPillText}>{tg.name}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  ) : null}
+ 
                    <Text style={styles.label}>{t("field.notes")}</Text>
                    <Text style={styles.value}>{item.notes ?? "-"}</Text>
-
+ 
                    <Text style={styles.label}>{t("field.password")}</Text>
                    <View style={styles.passwordRow}>
                      <Text style={[styles.passwordText, styles.flexText]} numberOfLines={1} ellipsizeMode="tail">
@@ -216,7 +231,6 @@ const PasswordDetailModal = ({
                        <Ionicons name="copy-outline" size={18} color="#9ec5ea" />
                      </TouchableOpacity>
                    </View>
-                   {/* creation / modification dates */}
                    {(() => {
                      const parseTs = (v: any) => (typeof v === "number" ? v : typeof v === "string" ? Date.parse(v) || 0 : 0);
                      const formatDate = (ts: number | 0 | null) => {
@@ -277,6 +291,9 @@ const styles = StyleSheet.create({
   body: { padding: 12, maxHeight: 520 },
   label: { color: colors.label, marginTop: 8, marginBottom: 6 },
   value: { color: "#e6f7ff", fontSize: 15 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
+  tagPill: { backgroundColor: "rgba(158,197,234,0.06)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginRight: 8 },
+  tagPillText: { color: "#9ec5ea", fontSize: 13, fontWeight: "600" },
   usernameRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
   passwordRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   passwordText: { fontSize: 18, fontWeight: "600", color: colors.passwordText },
@@ -291,5 +308,5 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: "#ff6b6b" },
   actionText: { color: "#fff", marginLeft: 8, fontWeight: "600" },
 });
-
+ 
 export default PasswordDetailModal;
