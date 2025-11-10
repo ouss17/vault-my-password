@@ -49,6 +49,7 @@ const AddPasswordModal = ({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [addingTag, setAddingTag] = useState(false);
   const [newTagName, setNewTagName] = useState("");
+  const [showTagHelp, setShowTagHelp] = useState(false);
 
   const isEdit = !!initialItem;
 
@@ -463,7 +464,14 @@ const AddPasswordModal = ({
             </View>
 
             {/* Tag selector (shows tags for selected category) */}
-            <Text style={[styles.label, { marginTop: 8 }]}>Tags</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+              <Text style={[styles.label, { marginRight: 8 }]}>
+                {t("field.tags") ?? "Tags"}
+              </Text>
+              <TouchableOpacity onPress={() => setShowTagHelp(true)} style={styles.helpBtn} accessibilityLabel={t("tags.help.open") ?? "Help"}>
+                <Text style={styles.helpIcon}>?</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.categories}>
               {!categoryId ? (
                 <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{t("tags.selectCategoryFirst") ?? "Select a category to manage tags"}</Text>
@@ -510,6 +518,21 @@ const AddPasswordModal = ({
                 </TouchableOpacity>
               </View>
             )}
+            {/* Tags help modal */}
+            <Modal visible={showTagHelp} animationType="fade" transparent onRequestClose={() => setShowTagHelp(false)}>
+              <View style={styles.helpModalBackdrop}>
+                <View style={styles.helpModal}>
+                  <Text style={styles.helpTitle}>{t("tags.help.title") ?? "À propos des tags"}</Text>
+                  <Text style={styles.helpBody}>
+                    {t("tags.help.body") ??
+                      "Les tags sont des labels optionnels pour organiser vos mots de passe à l'intérieur d'une catégorie.\n\nExemple : dans la catégorie « Email » vous pouvez ajouter les tags « pro », « gaming », « achats ». Vous pouvez sélectionner plusieurs tags pour un même mot de passe et filtrer les mots de passe en cliquant sur les tags dans la vue de la catégorie."}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowTagHelp(false)} style={styles.helpCloseBtn}>
+                    <Text style={{ color: "#fff", fontWeight: "600" }}>{t("actions.close") ?? "Fermer"}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
 
             <View style={styles.field}>
               <Text style={styles.label}>{t("field.notes")}</Text>
@@ -605,6 +628,13 @@ const styles = StyleSheet.create({
   btn: { padding: 10, marginLeft: 8 },
   btnPrimary: { backgroundColor: colors.accent, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 10 },
   btnText: { color: colors.textPrimary },
+  helpBtn: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.06)" },
+  helpIcon: { color: colors.textSecondary, fontWeight: "700" },
+  helpModalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", padding: 20 },
+  helpModal: { backgroundColor: colors.modalBg, padding: 18, borderRadius: 8, width: "100%", maxWidth: 520 },
+  helpTitle: { fontSize: 16, fontWeight: "700", color: colors.textPrimary, marginBottom: 8 },
+  helpBody: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  helpCloseBtn: { backgroundColor: colors.accent, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
 });
 
 export default AddPasswordModal;

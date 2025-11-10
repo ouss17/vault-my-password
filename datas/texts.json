@@ -3,6 +3,9 @@
   "navBar.settings": { "en": "Settings", "fr": "Paramètres", "es": "Ajustes" },
 
   "sort.categories.title": { "en": "Sort categories", "fr": "Trier les catégories", "es": "Ordenar categorías" },
+
+  "filter.categories": { "en": "Filter by categories", "fr": "Filtrer par catégories", "es": "Filtrar por categorías" },
+  "common.clear": { "en": "Clear", "fr": "Effacer", "es": "Borrar" },
   
   "common.add": { "en": "Add", "fr": "Ajouter", "es": "Añadir" },
   "common.ok": { "en": "OK", "fr": "OK", "es": "OK" },
@@ -292,6 +295,15 @@
     "fr": "Sélectionnez une catégorie pour gérer les tags",
     "es": "Seleccione una categoría para gestionar etiquetas"
   },
+  "tags.help.title": { "en": "About tags", "fr": "À propos des tags", "es": "Acerca de las etiquetas" },
+  "tags.help.body": {
+    "en": "Tags are optional labels to organize passwords inside a category.\n\nExample: in the \"Email\" category you could add tags like \"pro\", \"gaming\", \"shopping\". A password can have multiple tags. Tap tags above the list to filter passwords.",
+    "fr": "Les tags sont des labels optionnels pour organiser vos mots de passe à l'intérieur d'une catégorie.\n\nExemple : dans la catégorie « Email », vous pouvez ajouter les tags « pro », « gaming », « achats ». Un mot de passe peut avoir plusieurs tags. Touchez les tags au-dessus de la liste pour filtrer les mots de passe.",
+    "es": "Las etiquetas son marcas opcionales para organizar las contraseñas dentro de una categoría.\n\nEjemplo: en la categoría \"Email\" puedes añadir etiquetas como \"pro\", \"gaming\", \"compras\". Una contraseña puede tener varias etiquetas. Pulsa las etiquetas encima de la lista para filtrar las contraseñas."
+  },
+  "tags.help.open": { "en": "Open tags help", "fr": "Ouvrir l'aide des tags", "es": "Abrir ayuda de etiquetas" },
+
+  
   "validation.tagNameRequired": { "en": "Tag name is required.", "fr": "Le nom du tag est requis.", "es": "El nombre de la etiqueta es obligatorio." },
   "validation.selectCategoryFirst": { "en": "Please select a category first.", "fr": "Veuillez d'abord sélectionner une catégorie.", "es": "Por favor seleccione una categoría primero." },
   "validation.categoryNameTooLong": {

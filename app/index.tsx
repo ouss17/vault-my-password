@@ -4,6 +4,7 @@ import Fab from "@/components/Fab";
 import Header from "@/components/Header";
 import LanguageSelectionModal from "@/components/LanguageSelectionModal";
 import PasswordDetailModal from "@/components/PasswordDetailModal";
+import { Category } from "@/redux/slices/categoriesSlice";
 import type { PasswordItem } from "@/redux/slices/pwdSlice";
 import { finalizeFirstRun, initializeFirstRun } from "@/redux/slices/settingsSlice";
 import type { AppDispatch } from "@/redux/store";
@@ -11,8 +12,8 @@ import { RootState } from "@/redux/store";
 import { useT } from "@/utils/useText";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, Easing, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -37,8 +38,20 @@ const Index = () => {
   const [sortOrder, setSortOrder] = useState<"az" | "za" | null>(null);
   const [categorySort, setCategorySort] = useState<"az" | "za" | null>(null);
   const [query, setQuery] = useState("");
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const filterAnim = useRef(new Animated.Value(0)).current; 
 
-  const [showAdd, setShowAdd] = useState(false);
+  useEffect(() => {
+    Animated.timing(filterAnim, {
+      toValue: categoryFilterOpen ? 1 : 0,
+      duration: 250,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false, 
+    }).start();
+  }, [categoryFilterOpen, filterAnim]);
+
+   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<PasswordItem | null>(null); 
   const [detailId, setDetailId] = useState<string | null>(null);
   const router = useRouter();
@@ -53,7 +66,6 @@ const Index = () => {
     return map;
   }, [passwords]);
 
-  // run initialization (no-op if language setup is still required)
   React.useEffect(() => {
     dispatch(initializeFirstRun());
   }, [dispatch]);
@@ -105,7 +117,6 @@ const Index = () => {
       arr.push({ id: "uncategorized", name: "Sans catégorie", items: uncats });
     }
 
-    // sort categories themselves if requested
     if (categorySort) {
       const locale = (settings?.language as string) ?? "fr";
       arr.sort((a: any, b: any) => {
@@ -117,7 +128,6 @@ const Index = () => {
       });
     }
 
-    // apply sorting to items within each category if requested
     if (sortOrder) {
       const locale = (settings?.language as string) ?? "fr";
       for (const cat of arr) {
@@ -155,6 +165,16 @@ const Index = () => {
       .filter(Boolean) as typeof data;
   }, [data, query]);
 
+  const visibleData = useMemo(() => {
+    if (!selectedCategoryIds || selectedCategoryIds.length === 0) return filteredData;
+    return filteredData.filter((cat: Category) => selectedCategoryIds.includes(cat.id));
+  }, [filteredData, selectedCategoryIds]);
+  
+  const toggleCategorySelected = (id: string) => {
+    setSelectedCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const clearCategorySelection = () => setSelectedCategoryIds([]);
+ 
   const handleEditFromDetail = (item: PasswordItem) => {
     setDetailId(null);
     setEditItem(item);
@@ -189,6 +209,59 @@ const Index = () => {
             </TouchableOpacity>
           ) : null}
         </View>
+ 
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={styles.filterHeader}
+            onPress={() => setCategoryFilterOpen((s) => !s)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.filterToggleText}>{t("filter.categories") ?? "Filtrer par catégories"}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {selectedCategoryIds.length ? (
+                <TouchableOpacity onPress={clearCategorySelection} style={styles.clearBtn}>
+                  <Text style={{ color: colors.accent, fontSize: 13 }}>{t("common.clear") ?? "Effacer"}</Text>
+                </TouchableOpacity>
+              ) : null}
+              <Animated.Text
+                style={{
+                  color: colors.muted,
+                  marginLeft: 8,
+                  transform: [
+                    {
+                      rotate: filterAnim.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] }),
+                    },
+                  ],
+                }}
+              >
+                ▼
+              </Animated.Text>
+            </View>
+          </TouchableOpacity>
+
+          <Animated.View
+            pointerEvents={categoryFilterOpen ? "auto" : "none"}
+            style={[
+              styles.animatedChipsWrap,
+              {
+                height: filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 64] }),
+                opacity: filterAnim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.6, 1] }),
+              },
+            ]}
+          >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow} contentContainerStyle={{ paddingHorizontal: 6 }}>
+              {categories.map((c: any) => (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => toggleCategorySelected(c.id)}
+                  style={[styles.catChip, selectedCategoryIds.includes(c.id) && styles.catChipActive]}
+                >
+                  <Text style={[styles.catChipText, selectedCategoryIds.includes(c.id) && { color: "#fff" }]}>{c.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        </View>
 
         {filteredData.length === 0 ? (
           <View style={styles.empty}>
@@ -196,7 +269,7 @@ const Index = () => {
           </View>
         ) : (
           <FlatList
-            data={filteredData}
+            data={visibleData}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <CategoryAccordion
@@ -221,11 +294,9 @@ const Index = () => {
         onEdit={handleEditFromDetail} 
       />
 
-      {/* Language selection shown at first launch when language not set yet */}
       <LanguageSelectionModal
         visible={!!(settings?.isFirstLaunch && settings?.needsLanguageSetup)}
         onSelect={(lang) => {
-          // finalizeFirstRun will set language, create localized categories/examples and mark first launch done
           dispatch(finalizeFirstRun(lang));
         }}
       />
@@ -248,6 +319,15 @@ const colors = {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 110 },
+  filterContainer: { marginBottom: 8 },
+  filterHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 6, paddingVertical: 6 },
+  filterToggleText: { color: colors.textPrimary, fontWeight: "700" },
+  chipsRow: { paddingVertical: 8 },
+  animatedChipsWrap: { overflow: "hidden" },
+  catChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, height: 35, backgroundColor: colors.card, marginHorizontal: 6, borderWidth: 1, borderColor: "rgba(255,255,255,0.03)" },
+  catChipActive: { backgroundColor: colors.accent, borderColor: "rgba(30,144,255,0.14)" },
+  catChipText: { color: colors.textSecondary, fontWeight: "600" },
+  clearBtn: { marginRight: 8 },
   searchRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   searchInput: {
     flex: 1,
