@@ -4,6 +4,7 @@ import Fab from "@/components/Fab";
 import Header from "@/components/Header";
 import LanguageSelectionModal from "@/components/LanguageSelectionModal";
 import PasswordDetailModal from "@/components/PasswordDetailModal";
+import PrivacyOnBackground from "@/components/PrivacyOnBackground";
 import { Category } from "@/redux/slices/categoriesSlice";
 import type { PasswordItem } from "@/redux/slices/pwdSlice";
 import { finalizeFirstRun, initializeFirstRun } from "@/redux/slices/settingsSlice";
@@ -301,6 +302,7 @@ const Index = () => {
         }}
       />
 
+      <PrivacyOnBackground />
     </SafeAreaView>
   );
 };
