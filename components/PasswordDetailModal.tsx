@@ -34,6 +34,7 @@ const PasswordDetailModal = ({
   const dispatch = useDispatch<AppDispatch>();
   const t = useT();
   const [decrypted, setDecrypted] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
   const item = useSelector((s: RootState) => s.passwords.items.find((p : { id: string; name: string; username: string; website: string; mdp: string; notes: string; categoryId: string | undefined; }) => p.id === passwordId) ?? null);
@@ -44,15 +45,17 @@ const PasswordDetailModal = ({
   const itemTags = (item?.tags ?? []).map((id: string) => allTags.find((t) => t.id === id)).filter(Boolean) as Tag[];
  
    useEffect(() => {
-     if (!visible || !passwordId) {
-       setDecrypted(null);
-       return;
-     }
-     const key = "MASTER_KEY_PLACEHOLDER"; 
-     (async () => {
-       const res = await dispatch<any>(revealPasswordById(passwordId, key));
-       setDecrypted(res ?? null);
-     })();
+    if (!visible || !passwordId) {
+      setDecrypted(null);
+      setShowPassword(false);
+      return;
+    }
+    setShowPassword(false);
+    const key = "MASTER_KEY_PLACEHOLDER";
+    (async () => {
+      const res = await dispatch<any>(revealPasswordById(passwordId, key));
+      setDecrypted(res ?? null);
+    })();
    }, [visible, passwordId, dispatch]);
 
    if (!item) {
@@ -106,6 +109,30 @@ const PasswordDetailModal = ({
        Alert.alert(t("password.copy.title"), t("password.copy.message"));
      } catch (err) {
        console.error("Copy password error:", err);
+       Alert.alert(t("alert.error.title"), t("password.copy.error"));
+     }
+   };
+
+   const handleToggleShowPassword = async () => {
+     if (showPassword) {
+       setShowPassword(false);
+       return;
+     }
+     if (decrypted) {
+       setShowPassword(true);
+       return;
+     }
+     if (!passwordId) return;
+     try {
+       const res = await dispatch<any>(revealPasswordById(passwordId, "MASTER_KEY_PLACEHOLDER"));
+       if (res) {
+         setDecrypted(res);
+         setShowPassword(true);
+       } else {
+         Alert.alert(t("alert.error.title"), t("password.copy.hidden"));
+       }
+     } catch (e) {
+       console.error("Reveal on toggle error:", e);
        Alert.alert(t("alert.error.title"), t("password.copy.error"));
      }
    };
@@ -225,8 +252,11 @@ const PasswordDetailModal = ({
                    <Text style={styles.label}>{t("field.password")}</Text>
                    <View style={styles.passwordRow}>
                      <Text style={[styles.passwordText, styles.flexText]} numberOfLines={1} ellipsizeMode="tail">
-                       {decrypted != null ? decrypted : t("password.hidden")}
+                       {showPassword && decrypted != null ? decrypted : t("password.hidden")}
                      </Text>
+                     <TouchableOpacity onPress={handleToggleShowPassword} style={styles.eyeBtn} accessibilityLabel={showPassword ? t("accessibility.hidePassword") : t("accessibility.showPassword")}>
+                       <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9ec5ea" />
+                     </TouchableOpacity>
                      <TouchableOpacity onPress={handleCopyPassword} style={styles.copyBtn} accessibilityLabel={t("accessibility.copyPassword")}>
                        <Ionicons name="copy-outline" size={18} color="#9ec5ea" />
                      </TouchableOpacity>
@@ -286,6 +316,7 @@ const PasswordDetailModal = ({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: "center", padding: 20 },
   modal: { backgroundColor: colors.modalBg, borderRadius: 8, overflow: "hidden" },
+  eyeBtn: { padding: 8, borderRadius: 8, marginLeft: 8 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   title: { fontSize: 16, fontWeight: "600", color: colors.title },
   body: { padding: 12, maxHeight: 520 },
