@@ -497,23 +497,24 @@ const AddPasswordModal = ({
               ) : null}
             </View>
 
-            {addingTag && (
+            {/* Ajout : champ d'ajout de catégorie visible quand addingCategory === true */}
+            {addingCategory && (
               <View style={styles.addCategoryRow}>
                 <TextInput
-                  placeholder={t("tags.new.placeholder") ?? "New tag"}
-                  value={newTagName}
-                  onChangeText={setNewTagName}
+                  placeholder={t("category.new.placeholder") ?? "New category"}
+                  value={newCategoryName}
+                  onChangeText={setNewCategoryName}
                   style={[styles.input, styles.newCategoryInput]}
                   placeholderTextColor={colors.textSecondary}
                   maxLength={20}
                 />
-                <Text style={[styles.charCount, newTagName.length >= 20 ? styles.charCountWarning : null]}>
-                  {newTagName.length}/20
+                <Text style={[styles.charCount, newCategoryName.length >= 20 ? styles.charCountWarning : null]}>
+                  {newCategoryName.length}/20
                 </Text>
-                <TouchableOpacity onPress={handleAddTag} style={styles.addCategoryBtn}>
-                  <Text style={styles.addCategoryBtnText}>{t("category.addButton")}</Text>
+                <TouchableOpacity onPress={handleAddCategory} style={styles.addCategoryBtn}>
+                  <Text style={styles.addCategoryBtnText}>{t("category.addButton") ?? "Add"}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { setAddingTag(false); setNewTagName(""); }} style={styles.addCategoryCancel}>
+                <TouchableOpacity onPress={() => { setAddingCategory(false); setNewCategoryName(""); }} style={styles.addCategoryCancel}>
                   <Text style={{ color: colors.textSecondary }}>{t("common.cancel")}</Text>
                 </TouchableOpacity>
               </View>
