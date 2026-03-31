@@ -14,13 +14,23 @@ export default function PasswordGenerator() {
   const charsetDigits = "0123456789";
 
   const generate = () => {
-    const n = Math.max(4, Math.min(128, Number(lengthText) || 12));
+    const parsed = Number(lengthText) || 12;
+    const min = digitsOnly ? 3 : 4;
+    const n = Math.max(min, Math.min(128, parsed));
     const set = digitsOnly ? charsetDigits : charsetFull;
     let out = "";
     for (let i = 0; i < n; i++) {
       const r = Math.floor(Math.random() * set.length);
       out += set.charAt(r);
     }
+
+    // Si on n'est pas en mode "digitsOnly", s'assurer qu'il y a au moins un chiffre
+    if (!digitsOnly && !/\d/.test(out)) {
+      const pos = Math.floor(Math.random() * n);
+      const digit = charsetDigits.charAt(Math.floor(Math.random() * charsetDigits.length));
+      out = out.substring(0, pos) + digit + out.substring(pos + 1);
+    }
+
     setGenerated(out);
   };
 
