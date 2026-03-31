@@ -494,7 +494,28 @@ const AddPasswordModal = ({
                 <TouchableOpacity onPress={() => setAddingTag(true)} style={[styles.catChip, styles.addCatChip]}>
                   <Text style={[styles.catChipText, { color: colors.accent }]}>{t("tags.add") ?? "Add tag"}</Text>
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                // Champ d'ajout de tag (réutilise les mêmes styles que pour les catégories)
+                <View style={styles.addCategoryRow}>
+                  <TextInput
+                    placeholder={t("tags.new.placeholder") ?? "New tag"}
+                    value={newTagName}
+                    onChangeText={setNewTagName}
+                    style={[styles.input, styles.newTagInput]}
+                    placeholderTextColor={colors.textSecondary}
+                    maxLength={20}
+                  />
+                  <Text style={[styles.charCount, newTagName.length >= 20 ? styles.charCountWarning : null]}>
+                    {newTagName.length}/20
+                  </Text>
+                  <TouchableOpacity onPress={handleAddTag} style={styles.addCategoryBtn}>
+                    <Text style={styles.addCategoryBtnText}>{t("tags.addButton") ?? "Add"}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setAddingTag(false); setNewTagName(""); }} style={styles.addCategoryCancel}>
+                    <Text style={{ color: colors.textSecondary }}>{t("common.cancel")}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             {/* Ajout : champ d'ajout de catégorie visible quand addingCategory === true */}
@@ -618,12 +639,15 @@ const styles = StyleSheet.create({
   catChipText: { color: colors.textPrimary, fontWeight: "600" },
   
   addCategoryRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  newCategoryInput: { flex: 1, marginRight: 8 },
+  newCategoryInput: { flex: 1, marginRight: 8, minWidth: 180 },
   charCount: { color: colors.textSecondary, fontSize: 12, marginLeft: 8, alignSelf: "center" },
   charCountWarning: { color: colors.required },
-   addCategoryBtn: { backgroundColor: colors.accent, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
-   addCategoryBtnText: { color: "#fff", fontWeight: "600" },
-   addCategoryCancel: { marginLeft: 8 },
+  addCategoryBtn: { backgroundColor: colors.accent, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
+  addCategoryBtnText: { color: "#fff", fontWeight: "600" },
+  addCategoryCancel: { marginLeft: 8 },
+
+  // nouveau style pour champ d'ajout de tag (plus large)
+  newTagInput: { flex: 1, marginRight: 8, minWidth: 180 },
 
   actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 12 },
   btn: { padding: 10, marginLeft: 8 },
