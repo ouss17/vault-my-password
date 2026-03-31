@@ -13,7 +13,7 @@ docker run --rm -it `
   expo-builder bash -c "rm -rf node_modules package-lock.json && npm cache clean --force && npm install && npx expo prebuild --clean && eas build -p android --profile preview --local"
 
 
-Write-Host "Build terminé ! Vérifie le dossier dist/ ou build/ pour ton .aab"
+Write-Host "Build terminé ! Vérifie le dossier dist/ ou build/ pour ton .apk"
 
 # Lancer le script avec :
 # .\build-android.ps1
